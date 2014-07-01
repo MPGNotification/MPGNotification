@@ -56,7 +56,7 @@
     }
     
     if ([_subtitleSwitch isOn]) {
-        subtitle = @"Did you hear my new collab on Beatport? It's on #1.";
+        subtitle = @"Did you hear my new collab on Beatport? It's on #1. It's getting incredible reviews as well. Let me know what you think of it!";
     }
     else{
         subtitle = nil;

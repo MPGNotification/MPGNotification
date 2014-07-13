@@ -37,13 +37,12 @@ typedef enum {
     MPGNotificationAnimationTypeSnap
 } MPGNotificationAnimationType;
 
-@protocol MPGNotificationDelegate;
+typedef void (^MPGNotificationButtonHandler)(NSInteger buttonIndex);
 
 @interface MPGNotification : UIView <UIDynamicAnimatorDelegate>
 
 //Private property declarations.
 @property (nonatomic, strong) UIDynamicAnimator *animator;
-@property (nonatomic, weak) id <MPGNotificationDelegate> delegate;
 
 //Optional parameters to allow customisation of the notification UI.
 
@@ -63,15 +62,9 @@ typedef enum {
 
 //Call this method to show the notification on screen. Specify parameters like titleColor and animationType prior to calling this method
 - (void)show;
+- (void)showWithButtonHandler:(MPGNotificationButtonHandler)completionBlock;
 
 //Call this method to dismiss the notification. The notification will dismiss in the same animation as it appeared on screen. If the 'animated' variable is set NO, the notification will disappear without any animation.
 - (void)dismissWithAnimation:(BOOL)animated;
-
-@end
-
-@protocol MPGNotificationDelegate <NSObject>
-
-//Delegate method to inform that the notification was dismissed by the user and which button index was tapped to the caller.
-- (void)notificationView:(MPGNotification *)notification didDismissWithButtonIndex:(NSInteger)buttonIndex;
 
 @end

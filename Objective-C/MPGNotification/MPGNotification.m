@@ -8,9 +8,13 @@
 
 #import "MPGNotification.h"
 
-@implementation MPGNotification
+@interface MPGNotification ()
 
-@synthesize animator, delegate;
+@property (nonatomic, strong) MPGNotificationButtonHandler buttonHandler;
+
+@end
+
+@implementation MPGNotification
 
 //Private declarations: 'windowLevel' is to make sure the status bar does not overlap the notification. 'titleLabel' and 'subtitleLabel' are instances to labels on notification for modifications like color changes.
 UIWindowLevel windowLevel;
@@ -19,21 +23,13 @@ UILabel *subtitleLabel;
 
 - (id)initWithFrame:(CGRect)frame
 {
+    NSAssert(NO, @"Wrong initializer. Use initWithTitle:subtitle:image:backgroundColor:");
     self = [super initWithFrame:frame];
     if (self) {
         // Initialization code
     }
     return self;
 }
-
-/*
-// Only override drawRect: if you perform custom drawing.
-// An empty implementation adversely affects performance during animation.
-- (void)drawRect:(CGRect)rect
-{
-    // Drawing code
-}
-*/
 
 //Method to initialise the notification with title (mandatory), subtitile, background color and buttons for interactivity
 - (id)initWithTitle:(NSString *)title subtitle:(NSString *)subtitle image:(UIImage *)image backgroundColor:(UIColor *)color andButtonTitles:(NSArray *)buttonTitles
@@ -141,8 +137,100 @@ UILabel *subtitleLabel;
     return self;
 }
 
-- (void)show
+- (void)show {
+    
+    [self _showNotification];
+    
+}
+
+- (void)showWithButtonHandler:(MPGNotificationButtonHandler)buttonHandler {
+    
+    self.buttonHandler = buttonHandler;
+    
+    [self _showNotification];
+    
+}
+
+- (void)dismissWithAnimation:(BOOL)animated
 {
+    //Call this method to dismiss the notification. The notification will dismiss in the same animation as it appeared on screen. If the 'animated' variable is set NO, the notification will disappear without any animation.
+    CGRect viewBounds = [self.superview bounds];
+    if (animated) {
+        if (self.animationType == MPGNotificationAnimationTypeLinear || self.animationType == MPGNotificationAnimationTypeDrop) {
+            [UIView animateWithDuration:0.25
+                             animations:^{
+                                 self.frame = CGRectMake(0, 0, viewBounds.size.width, -64);
+                             }
+                             completion:^(BOOL finished){
+                                 [self removeFromSuperview];
+                                 [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:windowLevel];
+                             }];
+        }
+        else if (self.animationType == MPGNotificationAnimationTypeSnap){
+            self.animator = [[UIDynamicAnimator alloc] initWithReferenceView:self.superview];
+            [self.animator setDelegate:self];
+            UISnapBehavior *snapBehaviour = [[UISnapBehavior alloc] initWithItem:self snapToPoint:CGPointMake(viewBounds.size.width, -74)];
+            snapBehaviour.damping = 0.75f;
+            [self.animator addBehavior:snapBehaviour];
+            [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:windowLevel];
+        }
+        
+    }
+    else{
+        [self removeFromSuperview];
+        [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:windowLevel];
+    }
+}
+
+- (void)buttonTapped:(UIButton *)button
+{
+    //Called when a button is tapped on the notification. The notification is then moved off-screen and the button handling block is called.
+    [self dismissWithAnimation:YES];
+    
+    if (self.buttonHandler) {
+        self.buttonHandler(button.tag);
+    }
+}
+
+//Color methods to create a darker and lighter tone of the notification background color. These colors are used for providing backgrounds to button and make sure that buttons are suited to all color environments.
+- (UIColor *)darkerColorForColor:(UIColor *)color
+{
+    CGFloat r,g,b,a;
+    if ([color getRed:&r green:&g blue:&b alpha:&a]) {
+        return [UIColor colorWithRed:MAX(r - 0.15, 0.0)
+                               green:MAX(g - 0.15, 0.0)
+                                blue:MAX(b - 0.15, 0.0)
+                               alpha:a];
+    }
+    else{
+        return nil;
+    }
+}
+
+- (UIColor *)lighterColorForColor:(UIColor *)c
+{
+    CGFloat r, g, b, a;
+    if ([c getRed:&r green:&g blue:&b alpha:&a]){
+        return [UIColor colorWithRed:MIN(r + 0.35, 1.0)
+                               green:MIN(g + 0.35, 1.0)
+                                blue:MIN(b + 0.35, 1.0)
+                               alpha:a];
+    }
+    else{
+        return nil;
+    }
+    
+}
+
+- (void)dynamicAnimatorDidPause:(UIDynamicAnimator *)animator{
+    [self removeFromSuperview];
+    [self.animator setDelegate:nil];
+}
+
+#pragma mark - Private Methods
+
+- (void)_showNotification {
+    
     //Called to display the initiliased notification on screen. Set titleColor and subtitleColor (if set by the user, use default otherwise).
     [titleLabel setTextColor:self.titleColor];
     [subtitleLabel setTextColor:self.subtitleColor];
@@ -198,81 +286,6 @@ UILabel *subtitleLabel;
         });
     }
     
-}
-
-- (void)dismissWithAnimation:(BOOL)animated
-{
-    //Call this method to dismiss the notification. The notification will dismiss in the same animation as it appeared on screen. If the 'animated' variable is set NO, the notification will disappear without any animation.
-    CGRect viewBounds = [self.superview bounds];
-    if (animated) {
-        if (self.animationType == MPGNotificationAnimationTypeLinear || self.animationType == MPGNotificationAnimationTypeDrop) {
-            [UIView animateWithDuration:0.25
-                             animations:^{
-                                 self.frame = CGRectMake(0, 0, viewBounds.size.width, -64);
-                             }
-                             completion:^(BOOL finished){
-                                 [self removeFromSuperview];
-                                 [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:windowLevel];
-                             }];
-        }
-        else if (self.animationType == MPGNotificationAnimationTypeSnap){
-            self.animator = [[UIDynamicAnimator alloc] initWithReferenceView:self.superview];
-            [self.animator setDelegate:self];
-            UISnapBehavior *snapBehaviour = [[UISnapBehavior alloc] initWithItem:self snapToPoint:CGPointMake(viewBounds.size.width, -74)];
-            snapBehaviour.damping = 0.75f;
-            [self.animator addBehavior:snapBehaviour];
-            [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:windowLevel];
-        }
-        
-    }
-    else{
-        [self removeFromSuperview];
-        [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:windowLevel];
-    }
-}
-
-- (void)buttonTapped:(id)sender
-{
-    //Called when a button is tapped on the notification. The notification is then moved off-screen and the caller is notified via delegate that a button was tapped and its index.
-    [self dismissWithAnimation:YES];
-    if ([[self delegate] respondsToSelector:@selector(notificationView:didDismissWithButtonIndex:)]) {
-        [[self delegate] notificationView:self didDismissWithButtonIndex:[sender tag]];
-    }
-}
-
-//Color methods to create a darker and lighter tone of the notification background color. These colors are used for providing backgrounds to button and make sure that buttons are suited to all color environments.
-- (UIColor *)darkerColorForColor:(UIColor *)color
-{
-    CGFloat r,g,b,a;
-    if ([color getRed:&r green:&g blue:&b alpha:&a]) {
-        return [UIColor colorWithRed:MAX(r - 0.15, 0.0)
-                               green:MAX(g - 0.15, 0.0)
-                                blue:MAX(b - 0.15, 0.0)
-                               alpha:a];
-    }
-    else{
-        return nil;
-    }
-}
-
-- (UIColor *)lighterColorForColor:(UIColor *)c
-{
-    CGFloat r, g, b, a;
-    if ([c getRed:&r green:&g blue:&b alpha:&a]){
-        return [UIColor colorWithRed:MIN(r + 0.35, 1.0)
-                               green:MIN(g + 0.35, 1.0)
-                                blue:MIN(b + 0.35, 1.0)
-                               alpha:a];
-    }
-    else{
-        return nil;
-    }
-    
-}
-
-- (void)dynamicAnimatorDidPause:(UIDynamicAnimator *)animator{
-    [self removeFromSuperview];
-    [self.animator setDelegate:nil];
 }
 
 @end

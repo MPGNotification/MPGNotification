@@ -56,6 +56,8 @@ typedef enum {
 //Used to specify the type of animation that the notification should use to enter the screen. Can be one of the types from MPGNotificationAnimationType enum specified above.
 @property (nonatomic) MPGNotificationAnimationType animationType;
 
+@property (nonatomic) NSTimeInterval duration;
+
 //Initilisation method for the notification. Please note that -initWithFrame: will not properly initiliase the notification. Use this method instead. Pass the values that you need in the notification ('title' is mandatory, all other parameters are optional)
 - (id)initWithTitle:(NSString *)title subtitle:(NSString *)subtitle image:(UIImage *)image backgroundColor:(UIColor *)color andButtonTitles:(NSArray *)buttonTitles;
 

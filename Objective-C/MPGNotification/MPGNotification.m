@@ -192,6 +192,12 @@ UILabel *subtitleLabel;
         [self.animator addBehavior:snapBehaviour];
     }
     
+    if (self.duration > 0) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(self.duration * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [self dismissWithAnimation:YES];
+        });
+    }
+    
 }
 
 - (void)dismissWithAnimation:(BOOL)animated

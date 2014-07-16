@@ -417,7 +417,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     [self _dismissAnimated:YES];
     
     if (self.buttonHandler) {
-        self.buttonHandler(button.tag);
+        self.buttonHandler(self, button.tag);
     }
 }
 

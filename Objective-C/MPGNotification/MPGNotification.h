@@ -30,6 +30,8 @@
 
 #import <UIKit/UIKit.h>
 
+@class MPGNotification;
+
 ////////////////////////////////////////////////////////////////////////////////
 
 //Animation types to allow different animation entrance options for the notification.
@@ -48,7 +50,7 @@ typedef NS_ENUM(NSInteger, MPGNotificationButtonConfigration) {
 };
 
 // Block to handle button presses
-typedef void (^MPGNotificationButtonHandler)(NSInteger buttonIndex);
+typedef void (^MPGNotificationButtonHandler)(MPGNotification *notification, NSInteger buttonIndex);
 
 ////////////////////////////////////////////////////////////////////////////////
 

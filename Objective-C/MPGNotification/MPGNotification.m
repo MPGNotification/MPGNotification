@@ -8,22 +8,75 @@
 
 #import "MPGNotification.h"
 
+////////////////////////////////////////////////////////////////////////////////
+
+static const CGFloat kNotificationHeight = 64;
+static const CGFloat kIconImageSize = 32.0;
+
+static const NSString *kTitleFontName = @"HelveticaNeue-Bold";
+static const CGFloat kTitleFontSize = 17.0;
+
+static const NSString *kSubtitleFontName = @"HelveticaNeue";
+static const CGFloat kSubtitleFontSize = 14.0;
+
+static const CGFloat kButtonFontSize = 13.0;
+static const CGFloat kButtonCornerRadius = 3.0;
+
+static const CGFloat kColorAdjustmentDark = -0.15;
+static const CGFloat kColorAdjustmentLight = 0.35;
+
+////////////////////////////////////////////////////////////////////////////////
+
 @interface MPGNotification ()
 
-@property (nonatomic, strong) MPGNotificationButtonHandler buttonHandler;
+// required for system interaction
+@property (nonatomic) UIWindowLevel windowLevel; // ensures the system status bar does not overlap the notification
+
+// always built
+@property (nonatomic, strong) NSString *title;
+@property (nonatomic, strong) UILabel *titleLabel;
+
+// optionally built
+@property (nonatomic, strong) UIImage *iconImage;
+@property (nonatomic, strong) UIImageView *iconImageView;
+
+@property (nonatomic, strong) NSString *subtitle;
+@property (nonatomic, strong) UILabel *subtitleLabel;
+
+@property (nonatomic, readwrite) UIButton *firstButton;
+@property (nonatomic, readwrite) UIButton *secondButton;
+@property (nonatomic, readwrite) UIButton *closeButton;
+
+// other
+@property (nonatomic, strong) UIDynamicAnimator *animator;
+@property (nonatomic) MPGNotificationButtonConfigration buttonConfiguration;
 
 @end
 
+////////////////////////////////////////////////////////////////////////////////
+
 @implementation MPGNotification
 
-//Private declarations: 'windowLevel' is to make sure the status bar does not overlap the notification. 'titleLabel' and 'subtitleLabel' are instances to labels on notification for modifications like color changes.
-UIWindowLevel windowLevel;
-UILabel *titleLabel;
-UILabel *subtitleLabel;
+- (instancetype)init
+{
+    // If the App has a keyWindow, get it, else get the 'top'-most window in the App's hierarchy.
+    UIWindow *window = [self _topAppWindow];
+
+    // Now get the 'top'-most object in that window and use its width for the Notification.
+    UIView *topSubview = [[window subviews] lastObject];
+    CGRect notificationFrame = CGRectMake(0, 0, CGRectGetWidth(topSubview.bounds), kNotificationHeight);
+    
+    self = [super initWithFrame:notificationFrame];
+    if (self) {
+        self.titleColor = [UIColor whiteColor];
+        self.subtitleColor = [UIColor whiteColor];
+    }
+    return self;
+}
 
 - (id)initWithFrame:(CGRect)frame
 {
-    NSAssert(NO, @"Wrong initializer. Use initWithTitle:subtitle:image:backgroundColor:");
+    NSAssert(NO, @"Wrong initializer. Use the base init method, or initialize with the convenience class method provided.");
     self = [super initWithFrame:frame];
     if (self) {
         // Initialization code
@@ -31,110 +84,224 @@ UILabel *subtitleLabel;
     return self;
 }
 
-//Method to initialise the notification with title (mandatory), subtitile, background color and buttons for interactivity
-- (id)initWithTitle:(NSString *)title subtitle:(NSString *)subtitle image:(UIImage *)image backgroundColor:(UIColor *)color andButtonTitles:(NSArray *)buttonTitles
-{
-    //Get an instance of window's last object and its bounds. The bounds are used to determine the width of the view (for portrait and landscape) and thereby, the notification.
-    UIWindow* window = [UIApplication sharedApplication].keyWindow;
-    if (!window)
-        window = [[UIApplication sharedApplication].windows lastObject];
+#pragma mark - Class Overrides
+
+- (void)layoutSubviews {
     
-    CGRect viewBounds = [[[window subviews] lastObject] bounds];
-    self = [super initWithFrame:CGRectMake(0, 0, viewBounds.size.width, 64)];
+    [super layoutSubviews];
     
-    //Create titleFrame values for the width of the title label. Update this title label frame depending on the optional values - subtitle, icon and button titles.
-    CGRect titleFrame = CGRectMake(10, 3, viewBounds.size.width - 80, 20);
-    if (buttonTitles == nil) {
-        //If there are no buttons supplied, the titleFrame width is increased to fit in more text.
-        titleFrame.size.width += 50;
-    }
-    if (image != nil) {
-        //If there is an icon supplied, adjust the titleFrame width and X-position accordingly and add an ImageView object to display the icon in a 32x32px size.
-        UIImageView *notifIcon = [[UIImageView alloc] initWithFrame:CGRectMake(5, 15, 32, 32)];
-        [notifIcon setImage:image];
-        [self addSubview:notifIcon];
+    static const CGFloat kPaddingX = 5;
+    CGFloat notificationWidth = CGRectGetWidth(self.bounds);
+    
+    // TODO: deprecated; update this (use EA NSString category)
+    CGSize subtitleSize = [self.subtitle sizeWithFont:self.subtitleLabel.font
+                                    constrainedToSize:self.subtitleLabel.bounds.size];
+    
+    BOOL subtitleEmpty = (self.subtitle == nil || self.subtitle.length == 0);
+    BOOL subtitleOneLiner = (subtitleSize.height < 25 && subtitleEmpty == NO);
+    
+    
+    // ICON IMAGE
+    static const CGFloat kIconPaddingY = 15;
+    
+    self.iconImageView.frame = CGRectMake(kPaddingX, kIconPaddingY, kIconImageSize, kIconImageSize);
+    
+    
+    // BUTTONS
+    static const CGFloat kButtonOriginXOffset = 75;
+    static const CGFloat kCloseButtonOriginXOffset = 40;
+    
+    static const CGFloat kButtonWidthClose = 25;
+    static const CGFloat kButtonWidthDefault = 64;
+    static const CGFloat kButtonPadding = 2.5;
+    
+    static const CGFloat kCloseButtonOriginY = 17;
+    static const CGFloat kCloseButtonWidth = 25;
+    static const CGFloat kCloseButtonHeight = 30;
+    
+    CGFloat buttonOriginX = notificationWidth - kButtonOriginXOffset;
+    CGFloat closeButtonOriginX = notificationWidth - kCloseButtonOriginXOffset;
+    
+    CGFloat firstButtonOriginY = (self.secondButton) ? 6 : 17;
+    CGFloat secondButtonOriginY = CGRectGetMaxY(self.firstButton.frame) + kButtonPadding;
+    CGFloat buttonHeight = (self.firstButton && self.secondButton) ? 25 : 30;
+    
+    self.firstButton.frame = CGRectMake(buttonOriginX, firstButtonOriginY, kButtonWidthDefault, buttonHeight);
+    self.secondButton.frame = CGRectMake(buttonOriginX, secondButtonOriginY, kButtonWidthDefault, buttonHeight);
+    self.closeButton.frame = CGRectMake(closeButtonOriginX, kCloseButtonOriginY, kCloseButtonWidth, kCloseButtonHeight);
+    
+    
+    // TITLE LABEL
+    NSParameterAssert(self.title);
+    
+    static const CGFloat kTitleLabelPaddingX = 5;
+    static const CGFloat kTitleLabelHeight = 20;
+    
+    CGFloat textPaddingX = (self.iconImageView) ? CGRectGetMaxX(self.iconImageView.frame) + kTitleLabelPaddingX : kPaddingX;
+    CGFloat textTrailingX = (self.firstButton) ? 70 : 20;
+    CGFloat textWidth = notificationWidth - (textPaddingX + textTrailingX);
+    
+    CGFloat titleLabelPaddingY = (subtitleEmpty) ? 18 : (subtitleOneLiner) ? 13 : 3;
+    
+    self.titleLabel.frame = CGRectMake(textPaddingX,
+                                       titleLabelPaddingY,
+                                       textWidth,
+                                       kTitleLabelHeight);
+    
+    // SUBTITLE LABEL
+    static const CGFloat kSubtitleHeight = 50;
+    
+    CGFloat subtitlePaddingY = (subtitleOneLiner) ? 1 : 8;
+    
+    self.subtitleLabel.frame = CGRectMake(CGRectGetMinX(self.titleLabel.frame),
+                                          CGRectGetMaxY(self.titleLabel.frame) + subtitlePaddingY,
+                                          textWidth,
+                                          kSubtitleHeight);
+    [self.subtitleLabel sizeToFit];
+    
+    
+    // TEXT COLOR
+    [self.titleLabel setTextColor:self.titleColor];
+    [self.subtitleLabel setTextColor:self.subtitleColor];
+    
+}
+
+#pragma mark - UIDynamicAnimator Delegate
+
+- (void)dynamicAnimatorDidPause:(UIDynamicAnimator *)animator{
+    [self removeFromSuperview];
+    [self.animator setDelegate:nil];
+}
+
+#pragma mark - Class Methods
+
++ (MPGNotification *)notificationWithTitle:(NSString *)title subtitle:(NSString *)subtitle backgroundColor:(UIColor *)color iconImage:(UIImage *)image {
+    
+    MPGNotification *newNotification = [MPGNotification new];
+    
+    newNotification.title = title;
+    newNotification.subtitle = subtitle;
+    newNotification.backgroundColor = color;
+    newNotification.iconImage = image;
+    
+    return newNotification;
+    
+}
+
+#pragma mark - Getters & Setters
+
+- (void)setTitle:(NSString *)title {
+    
+    _title = title;
+    
+    if (!self.titleLabel) {
+        self.titleLabel = [[UILabel alloc] initWithFrame:CGRectZero];
+        [self addSubview:self.titleLabel];
         
-        titleFrame.origin.x = 40;
-        titleFrame.size.width -= 40;
+        self.titleLabel.font = [UIFont fontWithName:kTitleFontName size:kTitleFontSize];
     }
     
-    if (subtitle == nil || [subtitle isEqualToString:@""]) {
-        //Shift the titleFrame to center it vertically if there is no subtitle supplied by the user.
-        titleFrame.origin.y += 15;
-    }
-    else{
-        //The subtitle is supplied. Initialise an instance of subtitle with supplied text and font attributes.
-        subtitleLabel = [[UILabel alloc] initWithFrame:CGRectMake(titleFrame.origin.x, 24, titleFrame.size.width, 50)];
-        [subtitleLabel setText:subtitle];
-        [subtitleLabel setFont:[UIFont fontWithName:@"HelveticaNeue" size:14.0]];
-        [subtitleLabel setNumberOfLines:2];
-        [subtitleLabel sizeToFit];
-    }
+    self.titleLabel.text = title;
+    [self setNeedsLayout];
+}
+
+- (void)setSubtitle:(NSString *)subtitle {
     
-    //Initialise the title instance with the given text and bold font.
-    titleLabel = [[UILabel alloc] initWithFrame:titleFrame];
-    [titleLabel setFont:[UIFont fontWithName:@"HelveticaNeue-Bold" size:17.0]];
-    [titleLabel setText:title];
+    _subtitle = subtitle;
     
-    
-    if (subtitleLabel.frame.size.height < 25){
-        //The subtitle takes up only a single line. Shift the frames to align the title and subtitle in the center
-        CGRect subtitleFrame = subtitleLabel.frame;
-        subtitleFrame.origin.y += 7;
-        [subtitleLabel setFrame:subtitleFrame];
+    if (!self.subtitleLabel) {
+        self.subtitleLabel = [[UILabel alloc] initWithFrame:CGRectZero];
+        [self addSubview:self.subtitleLabel];
         
-        if (subtitle != nil && ![subtitle isEqualToString:@""]) {
-            [titleLabel setFrame:CGRectMake(titleFrame.origin.x, 13, titleFrame.size.width, 20)];
-        }
+        self.subtitleLabel.font = [UIFont fontWithName:kSubtitleFontName size:kSubtitleFontSize];
+        self.subtitleLabel.numberOfLines = 2;
     }
     
-    //ButtonTitles is an array of buttons. Check if it has a single, double or no button at all and add buttons accordingly (by aligning it on the center-right).
-    if (buttonTitles.count == 1) {
-        UIButton *button = [[UIButton alloc] initWithFrame:CGRectMake(viewBounds.size.width - 75, 17, 64, 30)];
-        [button setTitle:buttonTitles[0] forState:UIControlStateNormal];
-        [[button titleLabel] setFont:[UIFont systemFontOfSize:13.0]];
-        [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-        [button setTitleColor:[UIColor blackColor] forState:UIControlStateHighlighted];
-        [button setBackgroundColor:[self darkerColorForColor:color]];
-        [button.layer setCornerRadius:3.0];
-        [button addTarget:self action:@selector(buttonTapped:) forControlEvents:UIControlEventTouchUpInside];
-        [button setTag:0];
-        [self addSubview:button];
+    self.subtitleLabel.text = subtitle;
+    [self setNeedsLayout];
+}
+
+- (void)setIconImage:(UIImage *)iconImage {
+    
+    _iconImage = iconImage;
+    
+    if (!self.iconImageView) {
+        self.iconImageView = [[UIImageView alloc] initWithFrame:CGRectZero];
+        [self addSubview:self.iconImageView];
     }
-    else{
-        for (int i = 0; i<buttonTitles.count; i++) {
-            if (i < 2) {
-                float buttonOrigins = 27.5;
-                UIButton *button = [[UIButton alloc] initWithFrame:CGRectMake(viewBounds.size.width - 75, 6 + ((i+1)*buttonOrigins) - buttonOrigins, 64, 25)];
-                [button setTitle:buttonTitles[i] forState:UIControlStateNormal];
-                [[button titleLabel] setFont:[UIFont systemFontOfSize:13.0]];
-                [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-                [button setTitleColor:[UIColor blackColor] forState:UIControlStateHighlighted];
-                [button setBackgroundColor:[self darkerColorForColor:color]];
-                [button.layer setCornerRadius:3.0];
-                [button addTarget:self action:@selector(buttonTapped:) forControlEvents:UIControlEventTouchUpInside];
-                [button setTag:i];
-                [self addSubview:button];
+    
+    self.iconImageView.image = iconImage;
+    [self setNeedsLayout];
+}
+
+#pragma mark - Public Methods
+
+- (void)setButtonConfiguration:(MPGNotificationButtonConfigration)configuration withButtonTitles:(NSArray *)buttonTitles {
+    
+    self.buttonConfiguration = configuration;
+    
+    switch (configuration) {
+        case MPGNotificationButtonConfigrationZeroButtons:
+            NSParameterAssert(buttonTitles == nil || buttonTitles.count == 0);
+            self.firstButton = nil;
+            self.secondButton = nil;
+            self.closeButton = nil;
+            break;
+            
+        case MPGNotificationButtonConfigrationCloseButton: {
+            
+            self.firstButton = nil;
+            self.secondButton = nil;
+            
+            if (!self.closeButton) {
+                self.closeButton = [self _newButtonWithTitle:@"X" withTag:0];
+                [self addSubview:self.closeButton];
+                
+                self.closeButton.titleLabel.font = [UIFont systemFontOfSize:15.0]; // custom font!
+
             }
+            
+            break;
         }
-        if (buttonTitles == nil) {
-            UIButton *button = [[UIButton alloc] initWithFrame:CGRectMake(viewBounds.size.width - 40, 17, 25, 30)];
-            [button setTitle:@"X" forState:UIControlStateNormal];
-            [[button titleLabel] setFont:[UIFont systemFontOfSize:15.0]];
-            [button setTitleColor:[self lighterColorForColor:color] forState:UIControlStateNormal];
-            [button setTitleColor:[self darkerColorForColor:color] forState:UIControlStateHighlighted];
-            [button.layer setCornerRadius:3.0];
-            [button addTarget:self action:@selector(buttonTapped:) forControlEvents:UIControlEventTouchUpInside];
-            [button setTag:0];
-            [self addSubview:button];
+            
+        // deliberately grabbing one and two button states
+        case MPGNotificationButtonConfigrationOneButton:
+        case MPGNotificationButtonConfigrationTwoButton: {
+            
+            // note: configuration typedef value is matches # of buttons
+            NSParameterAssert(buttonTitles.count == configuration);
+            
+            self.closeButton = nil;
+            
+            NSInteger firstButtonTagIndex = 0;
+            NSString *firstButtonTitle = buttonTitles[firstButtonTagIndex];
+            if (!self.firstButton) {
+                self.firstButton = [self _newButtonWithTitle:firstButtonTitle withTag:firstButtonTagIndex];
+                [self addSubview:self.firstButton];
+            } else {
+                [self.firstButton setTitle:firstButtonTitle forState:UIControlStateNormal];
+            }
+            
+            if (configuration == MPGNotificationButtonConfigrationTwoButton) {
+                
+                NSInteger secondButtonTagIndex = 1;
+                NSString *secondButtonTitle = buttonTitles[secondButtonTagIndex];
+                if (!self.secondButton) {
+                    self.secondButton = [self _newButtonWithTitle:secondButtonTitle withTag:secondButtonTagIndex];
+                    [self addSubview:self.secondButton];
+                } else {
+                    [self.secondButton setTitle:firstButtonTitle forState:UIControlStateNormal];
+                }
+                
+            }
+            
+            break;
         }
+
     }
     
-    //Add subviews and return 'self' instance
-    [self addSubview:subtitleLabel];
-    [self addSubview:titleLabel];
-    self.backgroundColor = color;
-    return self;
+    [self setNeedsLayout];
+    
 }
 
 - (void)show {
@@ -151,96 +318,21 @@ UILabel *subtitleLabel;
     
 }
 
-- (void)dismissWithAnimation:(BOOL)animated
-{
-    //Call this method to dismiss the notification. The notification will dismiss in the same animation as it appeared on screen. If the 'animated' variable is set NO, the notification will disappear without any animation.
-    CGRect viewBounds = [self.superview bounds];
-    if (animated) {
-        if (self.animationType == MPGNotificationAnimationTypeLinear || self.animationType == MPGNotificationAnimationTypeDrop) {
-            [UIView animateWithDuration:0.25
-                             animations:^{
-                                 self.frame = CGRectMake(0, 0, viewBounds.size.width, -64);
-                             }
-                             completion:^(BOOL finished){
-                                 [self removeFromSuperview];
-                                 [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:windowLevel];
-                             }];
-        }
-        else if (self.animationType == MPGNotificationAnimationTypeSnap){
-            self.animator = [[UIDynamicAnimator alloc] initWithReferenceView:self.superview];
-            [self.animator setDelegate:self];
-            UISnapBehavior *snapBehaviour = [[UISnapBehavior alloc] initWithItem:self snapToPoint:CGPointMake(viewBounds.size.width, -74)];
-            snapBehaviour.damping = 0.75f;
-            [self.animator addBehavior:snapBehaviour];
-            [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:windowLevel];
-        }
-        
-    }
-    else{
-        [self removeFromSuperview];
-        [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:windowLevel];
-    }
-}
-
-- (void)buttonTapped:(UIButton *)button
-{
-    //Called when a button is tapped on the notification. The notification is then moved off-screen and the button handling block is called.
-    [self dismissWithAnimation:YES];
+- (void)dismissWithAnimation:(BOOL)animated {
     
-    if (self.buttonHandler) {
-        self.buttonHandler(button.tag);
-    }
-}
-
-//Color methods to create a darker and lighter tone of the notification background color. These colors are used for providing backgrounds to button and make sure that buttons are suited to all color environments.
-- (UIColor *)darkerColorForColor:(UIColor *)color
-{
-    CGFloat r,g,b,a;
-    if ([color getRed:&r green:&g blue:&b alpha:&a]) {
-        return [UIColor colorWithRed:MAX(r - 0.15, 0.0)
-                               green:MAX(g - 0.15, 0.0)
-                                blue:MAX(b - 0.15, 0.0)
-                               alpha:a];
-    }
-    else{
-        return nil;
-    }
-}
-
-- (UIColor *)lighterColorForColor:(UIColor *)c
-{
-    CGFloat r, g, b, a;
-    if ([c getRed:&r green:&g blue:&b alpha:&a]){
-        return [UIColor colorWithRed:MIN(r + 0.35, 1.0)
-                               green:MIN(g + 0.35, 1.0)
-                                blue:MIN(b + 0.35, 1.0)
-                               alpha:a];
-    }
-    else{
-        return nil;
-    }
+    [self _dismissAnimated:animated];
     
 }
 
-- (void)dynamicAnimatorDidPause:(UIDynamicAnimator *)animator{
-    [self removeFromSuperview];
-    [self.animator setDelegate:nil];
-}
-
-#pragma mark - Private Methods
+#pragma mark - Private Methods - Show/Dismiss
 
 - (void)_showNotification {
     
-    //Called to display the initiliased notification on screen. Set titleColor and subtitleColor (if set by the user, use default otherwise).
-    [titleLabel setTextColor:self.titleColor];
-    [subtitleLabel setTextColor:self.subtitleColor];
+    //Called to display the initiliased notification on screen.
     
-    //Get window instance to display the notification as a subview on the view present on screen
-    UIWindow* window = [UIApplication sharedApplication].keyWindow;
-    if (!window)
-        window = [[UIApplication sharedApplication].windows lastObject];
+    UIWindow *window = [self _topAppWindow];
     
-    windowLevel = [[[[UIApplication sharedApplication] delegate] window] windowLevel];
+    self.windowLevel = [[[[UIApplication sharedApplication] delegate] window] windowLevel];
     
     //Update windowLevel to make sure status bar does not interfere with the notification
     [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:UIWindowLevelStatusBar+1];
@@ -255,6 +347,8 @@ UILabel *subtitleLabel;
         [UIView animateWithDuration:0.25
                          animations:^{
                              self.frame = presentationFrame;
+                         } completion:^(BOOL finished) {
+                             [self _startDismissTimerIfSet];
                          }];
     }
     else if (self.animationType == MPGNotificationAnimationTypeDrop){
@@ -265,7 +359,6 @@ UILabel *subtitleLabel;
         
         UICollisionBehavior* collisionBehavior = [[UICollisionBehavior alloc] initWithItems:@[self]];
         [collisionBehavior addBoundaryWithIdentifier:@"MPGNotificationBoundary" fromPoint:CGPointMake(0, 64) toPoint:CGPointMake(viewBounds.size.width, 64)];
-        //collisionBehavior.translatesReferenceBoundsIntoBoundary = YES;
         [self.animator addBehavior:collisionBehavior];
         
         UIDynamicItemBehavior *elasticityBehavior = [[UIDynamicItemBehavior alloc] initWithItems:@[self]];
@@ -280,11 +373,115 @@ UILabel *subtitleLabel;
         [self.animator addBehavior:snapBehaviour];
     }
     
+}
+
+- (void)_dismissAnimated:(BOOL)animated {
+    
+    //Call this method to dismiss the notification. The notification will dismiss in the same animation as it appeared on screen. If the 'animated' variable is set NO, the notification will disappear without any animation.
+    CGRect viewBounds = [self.superview bounds];
+    if (animated) {
+        
+        if (self.animationType == MPGNotificationAnimationTypeLinear || self.animationType == MPGNotificationAnimationTypeDrop) {
+            [UIView animateWithDuration:0.25
+                             animations:^{
+                                 self.frame = CGRectMake(0, 0, viewBounds.size.width, -64);
+                             }
+                             completion:^(BOOL finished){
+                                 [self removeFromSuperview];
+                                 [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:self.windowLevel];
+                             }];
+        }
+        else if (self.animationType == MPGNotificationAnimationTypeSnap){
+            self.animator = [[UIDynamicAnimator alloc] initWithReferenceView:self.superview];
+            [self.animator setDelegate:self];
+            UISnapBehavior *snapBehaviour = [[UISnapBehavior alloc] initWithItem:self snapToPoint:CGPointMake(viewBounds.size.width, -74)];
+            snapBehaviour.damping = 0.75f;
+            [self.animator addBehavior:snapBehaviour];
+            [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:self.windowLevel];
+        }
+        
+    } else {
+        
+        [self removeFromSuperview];
+        [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:self.windowLevel];
+        
+    }
+    
+}
+
+#pragma mark - Private Methods
+
+- (void)_buttonTapped:(UIButton *)button
+{
+    //Called when a button is tapped on the notification. The notification is then moved off-screen and the button handling block is called.
+    [self _dismissAnimated:YES];
+    
+    if (self.buttonHandler) {
+        self.buttonHandler(button.tag);
+    }
+}
+
+//Color methods to create a darker and lighter tone of the notification background color. These colors are used for providing backgrounds to button and make sure that buttons are suited to all color environments.
+- (UIColor *)_darkerColorForColor:(UIColor *)color
+{
+    CGFloat r,g,b,a;
+    if ([color getRed:&r green:&g blue:&b alpha:&a]) {
+        static const CGFloat minValue = 0.0;
+        return [UIColor colorWithRed:MAX(r + kColorAdjustmentDark, minValue)
+                               green:MAX(g + kColorAdjustmentDark, minValue)
+                                blue:MAX(b + kColorAdjustmentDark, minValue)
+                               alpha:a];
+    } else {
+        return nil;
+    }
+}
+
+- (UIColor *)_lighterColorForColor:(UIColor *)color
+{
+    CGFloat r, g, b, a;
+    if ([color getRed:&r green:&g blue:&b alpha:&a]){
+        static const CGFloat maxValue = 1.0;
+        return [UIColor colorWithRed:MIN(r + kColorAdjustmentLight, maxValue)
+                               green:MIN(g + kColorAdjustmentLight, maxValue)
+                                blue:MIN(b + kColorAdjustmentLight, maxValue)
+                               alpha:a];
+    } else {
+        return nil;
+    }
+    
+}
+
+- (UIWindow *)_topAppWindow {
+    return ([UIApplication sharedApplication].keyWindow) ?: [[UIApplication sharedApplication].windows lastObject];
+}
+
+- (void)_startDismissTimerIfSet {
+    
     if (self.duration > 0) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(self.duration * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            [self dismissWithAnimation:YES];
+            [self _dismissAnimated:YES];
         });
     }
+    
+}
+
+- (UIButton *)_newButtonWithTitle:(NSString *)title withTag:(NSInteger)tag {
+    
+    UIButton *newButton = [[UIButton alloc] initWithFrame:CGRectZero];
+    newButton.tag = tag;
+    
+    [newButton setTitle:title forState:UIControlStateNormal];
+    newButton.titleLabel.font = [UIFont systemFontOfSize:kButtonFontSize];
+    
+    [newButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    [newButton setTitleColor:[UIColor blackColor] forState:UIControlStateHighlighted];
+    
+    [newButton setBackgroundColor:[self _darkerColorForColor:self.backgroundColor]];
+    newButton.layer.cornerRadius = kButtonCornerRadius;
+    
+    [newButton addTarget:self action:@selector(_buttonTapped:) forControlEvents:UIControlEventTouchUpInside];
+    
+    return newButton;
     
 }
 

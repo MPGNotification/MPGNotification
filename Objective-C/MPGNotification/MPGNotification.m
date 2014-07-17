@@ -5,6 +5,29 @@
 //  Created by Gaurav Wadhwani on 28/06/14.
 //  Copyright (c) 2014 Mappgic. All rights reserved.
 //
+//    The MIT License (MIT)
+//
+//    Copyright (c) 2014 Gaurav Wadhwani
+//
+//    Permission is hereby granted, free of charge, to any person obtaining a copy
+//    of this software and associated documentation files (the "Software"), to deal
+//    in the Software without restriction, including without limitation the rights
+//    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+//    copies of the Software, and to permit persons to whom the Software is
+//    furnished to do so, subject to the following conditions:
+//
+//    The above copyright notice and this permission notice shall be included in all
+//    copies or substantial portions of the Software.
+//
+//    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+//    SOFTWARE.
+//
+//  https://github.com/MPGNotification/MPGNotification
 
 #import "MPGNotification.h"
 
@@ -12,6 +35,7 @@
 
 static const CGFloat kNotificationHeight = 64;
 static const CGFloat kIconImageSize = 32.0;
+static const NSTimeInterval kLinearAnimationTime = 0.25;
 
 static const NSString *kTitleFontName = @"HelveticaNeue-Bold";
 static const CGFloat kTitleFontSize = 17.0;
@@ -24,6 +48,8 @@ static const CGFloat kButtonCornerRadius = 3.0;
 
 static const CGFloat kColorAdjustmentDark = -0.15;
 static const CGFloat kColorAdjustmentLight = 0.35;
+
+static const NSInteger kBackgroundButtonTag = 4145153;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -43,6 +69,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 @property (nonatomic, strong) NSString *subtitle;
 @property (nonatomic, strong) UILabel *subtitleLabel;
 
+@property (nonatomic, readwrite) UIButton *backgroundButton;
 @property (nonatomic, readwrite) UIButton *firstButton;
 @property (nonatomic, readwrite) UIButton *secondButton;
 @property (nonatomic, readwrite) UIButton *closeButton;
@@ -57,6 +84,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 
 @implementation MPGNotification
 
+// designated initializer
 - (instancetype)init
 {
     // If the App has a keyWindow, get it, else get the 'top'-most window in the App's hierarchy.
@@ -70,11 +98,17 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     if (self) {
         self.titleColor = [UIColor whiteColor];
         self.subtitleColor = [UIColor whiteColor];
+        
+        self.backgroundButton = [[UIButton alloc] initWithFrame:self.bounds];
+        [self addSubview:self.backgroundButton];
+        
+        self.backgroundButton.tag = kBackgroundButtonTag;
+        
     }
     return self;
 }
 
-- (id)initWithFrame:(CGRect)frame
+- (instancetype)initWithFrame:(CGRect)frame
 {
     NSAssert(NO, @"Wrong initializer. Use the base init method, or initialize with the convenience class method provided.");
     self = [super initWithFrame:frame];
@@ -93,12 +127,8 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     static const CGFloat kPaddingX = 5;
     CGFloat notificationWidth = CGRectGetWidth(self.bounds);
     
-    // TODO: deprecated; update this (use EA NSString category)
-    CGSize subtitleSize = [self.subtitle sizeWithFont:self.subtitleLabel.font
-                                    constrainedToSize:self.subtitleLabel.bounds.size];
-    
-    BOOL subtitleEmpty = (self.subtitle == nil || self.subtitle.length == 0);
-    BOOL subtitleOneLiner = (subtitleSize.height < 25 && subtitleEmpty == NO);
+    // BACKROUND TAP CATCHER
+    self.backgroundButton.frame = self.bounds;
     
     
     // ICON IMAGE
@@ -123,8 +153,8 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     CGFloat closeButtonOriginX = notificationWidth - kCloseButtonOriginXOffset;
     
     CGFloat firstButtonOriginY = (self.secondButton) ? 6 : 17;
-    CGFloat secondButtonOriginY = CGRectGetMaxY(self.firstButton.frame) + kButtonPadding;
     CGFloat buttonHeight = (self.firstButton && self.secondButton) ? 25 : 30;
+    CGFloat secondButtonOriginY = firstButtonOriginY + buttonHeight + kButtonPadding;
     
     self.firstButton.frame = CGRectMake(buttonOriginX, firstButtonOriginY, kButtonWidthDefault, buttonHeight);
     self.secondButton.frame = CGRectMake(buttonOriginX, secondButtonOriginY, kButtonWidthDefault, buttonHeight);
@@ -134,12 +164,21 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     // TITLE LABEL
     NSParameterAssert(self.title);
     
-    static const CGFloat kTitleLabelPaddingX = 5;
+    static const CGFloat kTitleLabelPaddingX = 8;
     static const CGFloat kTitleLabelHeight = 20;
     
     CGFloat textPaddingX = (self.iconImageView) ? CGRectGetMaxX(self.iconImageView.frame) + kTitleLabelPaddingX : kPaddingX;
-    CGFloat textTrailingX = (self.firstButton) ? 70 : 20;
+    CGFloat textTrailingX = (self.firstButton) ? CGRectGetWidth(self.bounds) - CGRectGetMinX(self.firstButton.frame) + 9 : 20;
     CGFloat textWidth = notificationWidth - (textPaddingX + textTrailingX);
+    
+    // expected subtitle calculations
+    // TODO: this method is deprecated; update this (use Evil Studios NSString category?)
+    static const CGFloat kSubtitleHeight = 50;
+    CGSize expectedSubtitleSize = [self.subtitle sizeWithFont:self.subtitleLabel.font
+                                            constrainedToSize:CGSizeMake(textWidth, kSubtitleHeight)];
+    
+    BOOL subtitleEmpty = (self.subtitle == nil || self.subtitle.length == 0);
+    BOOL subtitleOneLiner = (expectedSubtitleSize.height < 25 && subtitleEmpty == NO);
     
     CGFloat titleLabelPaddingY = (subtitleEmpty) ? 18 : (subtitleOneLiner) ? 13 : 3;
     
@@ -148,10 +187,9 @@ static const CGFloat kColorAdjustmentLight = 0.35;
                                        textWidth,
                                        kTitleLabelHeight);
     
-    // SUBTITLE LABEL
-    static const CGFloat kSubtitleHeight = 50;
     
-    CGFloat subtitlePaddingY = (subtitleOneLiner) ? 1 : 8;
+    // SUBTITLE LABEL
+    CGFloat subtitlePaddingY = 1;
     
     self.subtitleLabel.frame = CGRectMake(CGRectGetMinX(self.titleLabel.frame),
                                           CGRectGetMaxY(self.titleLabel.frame) + subtitlePaddingY,
@@ -210,7 +248,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     _subtitle = subtitle;
     
     if (!self.subtitleLabel) {
-        self.subtitleLabel = [[UILabel alloc] initWithFrame:CGRectZero];
+        self.subtitleLabel = [[UILabel alloc] initWithFrame:CGRectMake(1, 1, 1, 1)];
         [self addSubview:self.subtitleLabel];
         
         self.subtitleLabel.font = [UIFont fontWithName:kSubtitleFontName size:kSubtitleFontSize];
@@ -232,6 +270,20 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     
     self.iconImageView.image = iconImage;
     [self setNeedsLayout];
+}
+
+- (void)setBackgroundTapsEnabled:(BOOL)allowBackgroundTaps {
+    
+    _backgroundTapsEnabled = allowBackgroundTaps;
+    
+    [self.backgroundButton removeTarget:self action:NULL forControlEvents:UIControlEventAllEvents];
+    
+    if (allowBackgroundTaps) {
+        [self.backgroundButton addTarget:self
+                                  action:@selector(_buttonTapped:)
+                        forControlEvents:UIControlEventTouchUpInside];
+    }
+    
 }
 
 #pragma mark - Public Methods
@@ -328,49 +380,75 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 
 - (void)_showNotification {
     
-    //Called to display the initiliased notification on screen.
+    // Called to display the initiliased notification on screen.
     
     UIWindow *window = [self _topAppWindow];
     
     self.windowLevel = [[[[UIApplication sharedApplication] delegate] window] windowLevel];
     
-    //Update windowLevel to make sure status bar does not interfere with the notification
+    // Update windowLevel to make sure status bar does not interfere with the notification
     [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:UIWindowLevelStatusBar+1];
     
-    //Store presentationFrame (final frame) of the notification and move the notification off-screen. Then, animate the notification to presentationFrame depending on the animationType selected by the caller. If no animationType is specified, 'Linear' animation type will be used.
-    CGRect presentationFrame = self.frame;
-    CGRect viewBounds = [[[window subviews] lastObject] bounds];
-    self.frame = CGRectMake(0, 0, viewBounds.size.width, -64);
-    [[[window subviews] lastObject] addSubview:self];
+    // add the notification to the screen
+    [window.subviews.lastObject addSubview:self];
     
-    if (self.animationType == MPGNotificationAnimationTypeLinear) {
-        [UIView animateWithDuration:0.25
-                         animations:^{
-                             self.frame = presentationFrame;
-                         } completion:^(BOOL finished) {
-                             [self _startDismissTimerIfSet];
-                         }];
-    }
-    else if (self.animationType == MPGNotificationAnimationTypeDrop){
-        self.animator = [[UIDynamicAnimator alloc] initWithReferenceView:self.superview];
-        
-        UIGravityBehavior* gravityBehavior = [[UIGravityBehavior alloc] initWithItems:@[self]];
-        [self.animator addBehavior:gravityBehavior];
-        
-        UICollisionBehavior* collisionBehavior = [[UICollisionBehavior alloc] initWithItems:@[self]];
-        [collisionBehavior addBoundaryWithIdentifier:@"MPGNotificationBoundary" fromPoint:CGPointMake(0, 64) toPoint:CGPointMake(viewBounds.size.width, 64)];
-        [self.animator addBehavior:collisionBehavior];
-        
-        UIDynamicItemBehavior *elasticityBehavior = [[UIDynamicItemBehavior alloc] initWithItems:@[self]];
-        elasticityBehavior.elasticity = 0.3f;
-        [self.animator addBehavior:elasticityBehavior];
-    }
-    else if (self.animationType == MPGNotificationAnimationTypeSnap){
-        self.animator = [[UIDynamicAnimator alloc] initWithReferenceView:self.superview];
-        self.frame = CGRectMake(0, -150, viewBounds.size.width, 64);
-        UISnapBehavior *snapBehaviour = [[UISnapBehavior alloc] initWithItem:self snapToPoint:CGPointMake(viewBounds.size.width/2, 32)];
-        snapBehaviour.damping = 0.50f;
-        [self.animator addBehavior:snapBehaviour];
+    // move notification off-screen
+    self.transform = CGAffineTransformMakeTranslation(0, -1 * CGRectGetHeight(self.bounds));
+    
+    switch (self.animationType) {
+        case MPGNotificationAnimationTypeLinear: {
+            
+            [UIView animateWithDuration:kLinearAnimationTime animations:^{
+                self.transform = CGAffineTransformIdentity;
+            } completion:^(BOOL finished) {
+                [self _startDismissTimerIfSet];
+            }];
+            
+            break;
+        }
+            
+        case MPGNotificationAnimationTypeDrop: {
+            
+            self.animator = [[UIDynamicAnimator alloc] initWithReferenceView:self.superview];
+            
+            UIGravityBehavior* gravityBehavior = [[UIGravityBehavior alloc] initWithItems:@[self]];
+            [self.animator addBehavior:gravityBehavior];
+            
+            CGFloat notificationWidth = CGRectGetWidth(self.bounds);
+            CGFloat notificationHeight = CGRectGetHeight(self.bounds);
+            
+            UICollisionBehavior* collisionBehavior = [[UICollisionBehavior alloc] initWithItems:@[self]];
+            [collisionBehavior addBoundaryWithIdentifier:@"MPGNotificationBoundary"
+                                               fromPoint:CGPointMake(0, notificationHeight)
+                                                 toPoint:CGPointMake(notificationWidth, notificationHeight)];
+            
+            [self.animator addBehavior:collisionBehavior];
+            
+            UIDynamicItemBehavior *elasticityBehavior = [[UIDynamicItemBehavior alloc] initWithItems:@[self]];
+            elasticityBehavior.elasticity = 0.3f;
+            [self.animator addBehavior:elasticityBehavior];
+            
+            break;
+        }
+            
+        case MPGNotificationAnimationTypeSnap: {
+            
+            self.animator = [[UIDynamicAnimator alloc] initWithReferenceView:self.superview];
+            
+            // make transform more extreme
+            self.transform = CGAffineTransformMakeTranslation(0, -2.5 * CGRectGetHeight(self.bounds));
+            
+            CGPoint centerPoint = CGPointMake(CGRectGetWidth(self.bounds) * 0.5,
+                                              CGRectGetHeight(self.bounds) * 0.5);
+            
+            UISnapBehavior *snapBehaviour = [[UISnapBehavior alloc] initWithItem:self snapToPoint:centerPoint];
+            snapBehaviour.damping = 0.50f;
+            [self.animator addBehavior:snapBehaviour];
+
+            
+            break;
+        }
+            
     }
     
 }
@@ -411,8 +489,8 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 
 #pragma mark - Private Methods
 
-- (void)_buttonTapped:(UIButton *)button
-{
+- (void)_buttonTapped:(UIButton *)button {
+    
     //Called when a button is tapped on the notification. The notification is then moved off-screen and the button handling block is called.
     [self _dismissAnimated:YES];
     

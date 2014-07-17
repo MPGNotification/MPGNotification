@@ -392,11 +392,11 @@ static const NSInteger kBackgroundButtonTag = 4145153;
     // add the notification to the screen
     [window.subviews.lastObject addSubview:self];
     
-    // move notification off-screen
-    self.transform = CGAffineTransformMakeTranslation(0, -1 * CGRectGetHeight(self.bounds));
-    
     switch (self.animationType) {
         case MPGNotificationAnimationTypeLinear: {
+            
+            // move notification off-screen
+            self.transform = CGAffineTransformMakeTranslation(0, -1 * CGRectGetHeight(self.bounds));
             
             [UIView animateWithDuration:kLinearAnimationTime animations:^{
                 self.transform = CGAffineTransformIdentity;
@@ -408,6 +408,9 @@ static const NSInteger kBackgroundButtonTag = 4145153;
         }
             
         case MPGNotificationAnimationTypeDrop: {
+            
+            self.center = CGPointMake(self.center.x,
+                                      self.center.y - CGRectGetHeight(self.bounds));
             
             self.animator = [[UIDynamicAnimator alloc] initWithReferenceView:self.superview];
             
@@ -432,6 +435,9 @@ static const NSInteger kBackgroundButtonTag = 4145153;
         }
             
         case MPGNotificationAnimationTypeSnap: {
+            
+            self.center = CGPointMake(self.center.x,
+                                      self.center.y - 2.5 * CGRectGetHeight(self.bounds));
             
             self.animator = [[UIDynamicAnimator alloc] initWithReferenceView:self.superview];
             
@@ -459,23 +465,31 @@ static const NSInteger kBackgroundButtonTag = 4145153;
     CGRect viewBounds = [self.superview bounds];
     if (animated) {
         
-        if (self.animationType == MPGNotificationAnimationTypeLinear || self.animationType == MPGNotificationAnimationTypeDrop) {
-            [UIView animateWithDuration:0.25
-                             animations:^{
-                                 self.frame = CGRectMake(0, 0, viewBounds.size.width, -64);
-                             }
-                             completion:^(BOOL finished){
-                                 [self removeFromSuperview];
-                                 [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:self.windowLevel];
-                             }];
-        }
-        else if (self.animationType == MPGNotificationAnimationTypeSnap){
-            self.animator = [[UIDynamicAnimator alloc] initWithReferenceView:self.superview];
-            [self.animator setDelegate:self];
-            UISnapBehavior *snapBehaviour = [[UISnapBehavior alloc] initWithItem:self snapToPoint:CGPointMake(viewBounds.size.width, -74)];
-            snapBehaviour.damping = 0.75f;
-            [self.animator addBehavior:snapBehaviour];
-            [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:self.windowLevel];
+        switch (self.animationType) {
+            
+                // deliberately capturing 2 cases
+            case MPGNotificationAnimationTypeLinear:
+            case MPGNotificationAnimationTypeDrop: {
+                
+                [UIView animateWithDuration:kLinearAnimationTime animations:^{
+                    self.transform = CGAffineTransformMakeTranslation(0, -1 * CGRectGetHeight(self.bounds));
+                } completion:^(BOOL finished){
+                    [self removeFromSuperview];
+                    [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:self.windowLevel];
+                }];
+                break;
+            }
+                
+            case MPGNotificationAnimationTypeSnap: {
+                self.animator = [[UIDynamicAnimator alloc] initWithReferenceView:self.superview];
+                [self.animator setDelegate:self];
+                UISnapBehavior *snapBehaviour = [[UISnapBehavior alloc] initWithItem:self snapToPoint:CGPointMake(viewBounds.size.width, -74)];
+                snapBehaviour.damping = 0.75f;
+                [self.animator addBehavior:snapBehaviour];
+                
+                [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:self.windowLevel];
+                break;
+            }
         }
         
     } else {

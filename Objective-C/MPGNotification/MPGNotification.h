@@ -55,7 +55,7 @@ typedef void (^MPGNotificationButtonHandler)(MPGNotification *notification, NSIn
 
 ////////////////////////////////////////////////////////////////////////////////
 
-@interface MPGNotification : UIView <UIDynamicAnimatorDelegate>
+@interface MPGNotification : UIScrollView <UIScrollViewDelegate, UIDynamicAnimatorDelegate>
 
 // Public accessors to private properties
 @property (nonatomic, readonly) UIButton *backgroundButton; // to read tag value
@@ -65,6 +65,9 @@ typedef void (^MPGNotificationButtonHandler)(MPGNotification *notification, NSIn
 
 // Allows actions and dismissal when the background of the Notification is tapped. Defaults to YES.
 @property (nonatomic) BOOL backgroundTapsEnabled;
+
+// Allows 'swipe to dismiss' action on the Notification. Defaults to YES.
+@property (nonatomic) BOOL swipeToDismissEnabled;
 
 // To set the title color of the notification. Defaults to [UIColor whiteColor].
 @property (nonatomic, strong) UIColor *titleColor;

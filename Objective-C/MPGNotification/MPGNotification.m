@@ -49,8 +49,6 @@ static const CGFloat kButtonCornerRadius = 3.0;
 static const CGFloat kColorAdjustmentDark = -0.15;
 static const CGFloat kColorAdjustmentLight = 0.35;
 
-static const NSInteger kBackgroundButtonTag = 4145153;
-
 ////////////////////////////////////////////////////////////////////////////////
 
 @interface MPGNotification ()
@@ -69,15 +67,18 @@ static const NSInteger kBackgroundButtonTag = 4145153;
 @property (nonatomic, strong) NSString *subtitle;
 @property (nonatomic, strong) UILabel *subtitleLabel;
 
-@property (nonatomic, readwrite) UIButton *backgroundButton;
+@property (nonatomic, readwrite) UIView *backgroundView;
 @property (nonatomic, readwrite) UIButton *firstButton;
 @property (nonatomic, readwrite) UIButton *secondButton;
 @property (nonatomic, readwrite) UIButton *closeButton;
 
 @property (nonatomic, strong) UIView *swipeHintView;
 
-// other
+// state
 @property (nonatomic) BOOL notificationRevealed;
+@property (nonatomic) BOOL notificationDragged;
+
+// other
 @property (nonatomic, strong) UIDynamicAnimator *animator;
 @property (nonatomic) MPGNotificationButtonConfigration buttonConfiguration;
 
@@ -112,11 +113,11 @@ static const NSInteger kBackgroundButtonTag = 4145153;
         [super setBackgroundColor:[UIColor clearColor]]; // set background color of scrollView to clear
         
         // make background button (always needed, even if no target)
-        self.backgroundButton = [[UIButton alloc] initWithFrame:self.bounds];
-        [self addSubview:self.backgroundButton];
+        self.backgroundView = [[UIView alloc] initWithFrame:self.bounds];
+        [self addSubview:self.backgroundView];
         
-        self.backgroundButton.frame = self.bounds;
-        self.backgroundButton.tag = kBackgroundButtonTag;
+        self.backgroundView.frame = self.bounds;
+        self.backgroundView.tag = MPGNotificationButtonConfigrationZeroButtons;
         
         // set other default values
         self.titleColor = [UIColor whiteColor];
@@ -227,8 +228,8 @@ static const NSInteger kBackgroundButtonTag = 4145153;
     static const CGFloat kSwipeHintHeight = 5;
     static const CGFloat kSwipeHintTrailingY = 5;
     
-    self.swipeHintView.frame = CGRectMake(0.5 * (CGRectGetWidth(self.backgroundButton.bounds) - kSwipeHintWidth),
-                                          CGRectGetHeight(self.backgroundButton.bounds) - kSwipeHintTrailingY - kSwipeHintHeight,
+    self.swipeHintView.frame = CGRectMake(0.5 * (CGRectGetWidth(self.backgroundView.bounds) - kSwipeHintWidth),
+                                          CGRectGetHeight(self.backgroundView.bounds) - kSwipeHintTrailingY - kSwipeHintHeight,
                                           kSwipeHintWidth,
                                           kSwipeHintHeight);
     
@@ -244,6 +245,14 @@ static const NSInteger kBackgroundButtonTag = 4145153;
 }
 
 #pragma mark - UIScrollView Delegate
+
+- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
+    
+    if (self.notificationDragged == NO) {
+        self.notificationDragged = YES;
+    }
+    
+}
 
 - (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
     
@@ -290,13 +299,13 @@ static const NSInteger kBackgroundButtonTag = 4145153;
 #pragma mark - Getters & Setters
 
 - (UIColor *)backgroundColor {
-    return self.backgroundButton.backgroundColor;
+    return self.backgroundView.backgroundColor;
 }
 
 - (void)setBackgroundColor:(UIColor *)backgroundColor {
     
     // do not actually set the background color of the base view (scrollView)
-    self.backgroundButton.backgroundColor = backgroundColor;
+    self.backgroundView.backgroundColor = backgroundColor;
     
 }
 
@@ -306,7 +315,7 @@ static const NSInteger kBackgroundButtonTag = 4145153;
     
     if (!self.titleLabel) {
         self.titleLabel = [[UILabel alloc] initWithFrame:CGRectZero];
-        [self.backgroundButton addSubview:self.titleLabel];
+        [self.backgroundView addSubview:self.titleLabel];
         
         self.titleLabel.font = [UIFont fontWithName:kTitleFontName size:kTitleFontSize];
     }
@@ -321,7 +330,7 @@ static const NSInteger kBackgroundButtonTag = 4145153;
     
     if (!self.subtitleLabel) {
         self.subtitleLabel = [[UILabel alloc] initWithFrame:CGRectMake(1, 1, 1, 1)];
-        [self.backgroundButton addSubview:self.subtitleLabel];
+        [self.backgroundView addSubview:self.subtitleLabel];
         
         self.subtitleLabel.font = [UIFont fontWithName:kSubtitleFontName size:kSubtitleFontSize];
         self.subtitleLabel.numberOfLines = 2;
@@ -337,7 +346,7 @@ static const NSInteger kBackgroundButtonTag = 4145153;
     
     if (!self.iconImageView) {
         self.iconImageView = [[UIImageView alloc] initWithFrame:CGRectZero];
-        [self.backgroundButton addSubview:self.iconImageView];
+        [self.backgroundView addSubview:self.iconImageView];
     }
     
     self.iconImageView.image = iconImage;
@@ -346,14 +355,18 @@ static const NSInteger kBackgroundButtonTag = 4145153;
 
 - (void)setBackgroundTapsEnabled:(BOOL)allowBackgroundTaps {
     
+    NSParameterAssert(self.backgroundView);
+    
     _backgroundTapsEnabled = allowBackgroundTaps;
     
-    [self.backgroundButton removeTarget:self action:NULL forControlEvents:UIControlEventAllEvents];
+    // remove existing tapRecognizers
+    for (UIGestureRecognizer *recognizer in self.backgroundView.gestureRecognizers.copy) {
+        [self.backgroundView removeGestureRecognizer:recognizer];
+    }
     
     if (allowBackgroundTaps) {
-        [self.backgroundButton addTarget:self
-                                  action:@selector(_buttonTapped:)
-                        forControlEvents:UIControlEventTouchUpInside];
+        UITapGestureRecognizer *tapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(_backgroundTapped:)];
+        [self.backgroundView addGestureRecognizer:tapRecognizer];
     }
     
 }
@@ -368,7 +381,7 @@ static const NSInteger kBackgroundButtonTag = 4145153;
         
         if (!self.swipeHintView) {
             self.swipeHintView = [[UIView alloc] initWithFrame:CGRectZero];
-            [self.backgroundButton addSubview:self.swipeHintView];
+            [self.backgroundView addSubview:self.swipeHintView];
         }
         
     }
@@ -380,6 +393,8 @@ static const NSInteger kBackgroundButtonTag = 4145153;
 - (void)setButtonConfiguration:(MPGNotificationButtonConfigration)configuration withButtonTitles:(NSArray *)buttonTitles {
     
     self.buttonConfiguration = configuration;
+    
+    NSInteger buttonTag = configuration;
     
     switch (configuration) {
         case MPGNotificationButtonConfigrationZeroButtons:
@@ -395,8 +410,8 @@ static const NSInteger kBackgroundButtonTag = 4145153;
             self.secondButton = nil;
             
             if (!self.closeButton) {
-                self.closeButton = [self _newButtonWithTitle:@"X" withTag:0];
-                [self.backgroundButton addSubview:self.closeButton];
+                self.closeButton = [self _newButtonWithTitle:@"X" withTag:buttonTag];
+                [self.backgroundView addSubview:self.closeButton];
                 
                 self.closeButton.titleLabel.font = [UIFont systemFontOfSize:15.0]; // custom font!
 
@@ -414,22 +429,20 @@ static const NSInteger kBackgroundButtonTag = 4145153;
             
             self.closeButton = nil;
             
-            NSInteger firstButtonTagIndex = 0;
-            NSString *firstButtonTitle = buttonTitles[firstButtonTagIndex];
+            NSString *firstButtonTitle = buttonTitles[0];
             if (!self.firstButton) {
-                self.firstButton = [self _newButtonWithTitle:firstButtonTitle withTag:firstButtonTagIndex];
-                [self.backgroundButton addSubview:self.firstButton];
+                self.firstButton = [self _newButtonWithTitle:firstButtonTitle withTag:buttonTag];
+                [self.backgroundView addSubview:self.firstButton];
             } else {
                 [self.firstButton setTitle:firstButtonTitle forState:UIControlStateNormal];
             }
             
             if (configuration == MPGNotificationButtonConfigrationTwoButton) {
                 
-                NSInteger secondButtonTagIndex = 1;
-                NSString *secondButtonTitle = buttonTitles[secondButtonTagIndex];
+                NSString *secondButtonTitle = buttonTitles[1];
                 if (!self.secondButton) {
-                    self.secondButton = [self _newButtonWithTitle:secondButtonTitle withTag:secondButtonTagIndex];
-                    [self.backgroundButton addSubview:self.secondButton];
+                    self.secondButton = [self _newButtonWithTitle:secondButtonTitle withTag:buttonTag];
+                    [self.backgroundView addSubview:self.secondButton];
                 } else {
                     [self.secondButton setTitle:firstButtonTitle forState:UIControlStateNormal];
                 }
@@ -500,25 +513,25 @@ static const NSInteger kBackgroundButtonTag = 4145153;
             
         case MPGNotificationAnimationTypeDrop: {
             
-            self.backgroundButton.center = CGPointMake(self.center.x,
+            self.backgroundView.center = CGPointMake(self.center.x,
                                                        self.center.y - CGRectGetHeight(self.bounds));
             
             self.animator = [[UIDynamicAnimator alloc] initWithReferenceView:self];
             
-            UIGravityBehavior* gravityBehavior = [[UIGravityBehavior alloc] initWithItems:@[self.backgroundButton]];
+            UIGravityBehavior* gravityBehavior = [[UIGravityBehavior alloc] initWithItems:@[self.backgroundView]];
             [self.animator addBehavior:gravityBehavior];
             
             CGFloat notificationWidth = CGRectGetWidth(self.bounds);
             CGFloat notificationHeight = CGRectGetHeight(self.bounds);
             
-            UICollisionBehavior* collisionBehavior = [[UICollisionBehavior alloc] initWithItems:@[self.backgroundButton]];
+            UICollisionBehavior* collisionBehavior = [[UICollisionBehavior alloc] initWithItems:@[self.backgroundView]];
             [collisionBehavior addBoundaryWithIdentifier:@"MPGNotificationBoundary"
                                                fromPoint:CGPointMake(0, notificationHeight)
                                                  toPoint:CGPointMake(notificationWidth, notificationHeight)];
             
             [self.animator addBehavior:collisionBehavior];
             
-            UIDynamicItemBehavior *elasticityBehavior = [[UIDynamicItemBehavior alloc] initWithItems:@[self.backgroundButton]];
+            UIDynamicItemBehavior *elasticityBehavior = [[UIDynamicItemBehavior alloc] initWithItems:@[self.backgroundView]];
             elasticityBehavior.elasticity = 0.3f;
             [self.animator addBehavior:elasticityBehavior];
             
@@ -527,7 +540,7 @@ static const NSInteger kBackgroundButtonTag = 4145153;
             
         case MPGNotificationAnimationTypeSnap: {
             
-            self.backgroundButton.center = CGPointMake(self.center.x,
+            self.backgroundView.center = CGPointMake(self.center.x,
                                                        self.center.y - 2 * CGRectGetHeight(self.bounds));
             
             self.animator = [[UIDynamicAnimator alloc] initWithReferenceView:self];
@@ -535,7 +548,7 @@ static const NSInteger kBackgroundButtonTag = 4145153;
             CGPoint centerPoint = CGPointMake(CGRectGetWidth(self.bounds) * 0.5,
                                               CGRectGetHeight(self.bounds) * 0.5);
             
-            UISnapBehavior *snapBehaviour = [[UISnapBehavior alloc] initWithItem:self.backgroundButton snapToPoint:centerPoint];
+            UISnapBehavior *snapBehaviour = [[UISnapBehavior alloc] initWithItem:self.backgroundView snapToPoint:centerPoint];
             snapBehaviour.damping = 0.50f;
             [self.animator addBehavior:snapBehaviour];
 
@@ -571,7 +584,7 @@ static const NSInteger kBackgroundButtonTag = 4145153;
             case MPGNotificationAnimationTypeSnap: {
                 self.animator = [[UIDynamicAnimator alloc] initWithReferenceView:self];
                 [self.animator setDelegate:self];
-                UISnapBehavior *snapBehaviour = [[UISnapBehavior alloc] initWithItem:self.backgroundButton snapToPoint:CGPointMake(viewBounds.size.width, -74)];
+                UISnapBehavior *snapBehaviour = [[UISnapBehavior alloc] initWithItem:self.backgroundView snapToPoint:CGPointMake(viewBounds.size.width, -74)];
                 snapBehaviour.damping = 0.75f;
                 [self.animator addBehavior:snapBehaviour];
                 
@@ -592,12 +605,14 @@ static const NSInteger kBackgroundButtonTag = 4145153;
 
 - (void)_buttonTapped:(UIButton *)button {
     
-    //Called when a button is tapped on the notification. The notification is then moved off-screen and the button handling block is called.
-    [self _dismissAnimated:YES];
+    [self _responderTapped:button];
     
-    if (self.buttonHandler) {
-        self.buttonHandler(self, button.tag);
-    }
+}
+
+- (void)_backgroundTapped:(UITapGestureRecognizer *)tapRecognizer {
+    
+    [self _responderTapped:self.backgroundView];
+    
 }
 
 #pragma mark - Private Methods
@@ -640,7 +655,9 @@ static const NSInteger kBackgroundButtonTag = 4145153;
     
     if (self.duration > 0) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(self.duration * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            [self _dismissAnimated:YES];
+            if (self.notificationDragged == NO) {
+                [self _dismissAnimated:YES];
+            }
         });
     }
     
@@ -678,6 +695,16 @@ static const NSInteger kBackgroundButtonTag = 4145153;
 - (BOOL)_notificationOffScreen {
     
     return (self.contentOffset.y >= CGRectGetHeight(self.bounds));
+    
+}
+
+- (void)_responderTapped:(UIView *)responder {
+    
+    [self _dismissAnimated:YES];
+    
+    if (self.buttonHandler) {
+        self.buttonHandler(self, responder.tag);
+    }
     
 }
 

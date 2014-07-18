@@ -58,7 +58,7 @@ typedef void (^MPGNotificationButtonHandler)(MPGNotification *notification, NSIn
 @interface MPGNotification : UIScrollView <UIScrollViewDelegate, UIDynamicAnimatorDelegate>
 
 // Public accessors to private properties
-@property (nonatomic, readonly) UIButton *backgroundButton; // to read tag value
+@property (nonatomic, readonly) UIView *backgroundView; // to read tag value
 @property (nonatomic, readonly) UIButton *firstButton; // to read tag value
 @property (nonatomic, readonly) UIButton *secondButton;  // to read tag value
 @property (nonatomic, readonly) UIButton *closeButton;  // to read tag value

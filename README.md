@@ -3,6 +3,8 @@ MPGNotification
 
 MPGNotifications is an iOS control that allows you to display in-app interactive notifications that are fully customisable to suit your needs.
 
+Available on [Cocoapods.org](http://cocoapods.org/); import to your project using: `pod 'MPGNotification', '~> 1.0'`
+
 ![MPGNotification Screenshot](https://s3.amazonaws.com/evilapples/stash/MPGNotification.png)
 
 ## Overview

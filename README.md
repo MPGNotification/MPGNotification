@@ -6,7 +6,9 @@ MPGNotifications is an iOS control that allows you to display in-app interactive
 ![MPGNotification Screenshot](https://s3.amazonaws.com/evilapples/stash/MPGNotification.png)
 
 ## Overview
-`MPGNotification` objects are `UIView` objects. They are displayed on top of "everything" using logic that grabs the level of the top-most window (as reported by `UIApplciation`).
+`MPGNotification` objects are `UIView` objects. They are displayed on top of "everything" using self-contained logic that grabs the level of the top-most window (as reported by `UIApplciation`).
+
+You just initialize them, configure them, and show them. That's it!
 
 ## Initialization
 Initializing an `MPGNotification` object is simple - just use init! Or new!
@@ -98,6 +100,12 @@ switch (self.buttonConfiguration) {
 ## Properties
 All properties must be set *BEFORE* `show` or `showWithButtonHandler:` is called. The following properties and 'setter methods' are available:
 ```objc
+// Properties used for basic styling
+@property (nonatomic, strong) NSString *title; // required
+@property (nonatomic, strong) NSString *subtitle; // optional
+@property (nonatomic, strong) UIImage *iconImage; // optional
+@property (nonatomic, strong) UIColor *backgroundColor; // optional
+
 // Allows actions and dismissal when the background of the Notification is tapped.
 // Default: YES
 @property (nonatomic) BOOL backgroundTapsEnabled;
@@ -132,4 +140,38 @@ All properties must be set *BEFORE* `show` or `showWithButtonHandler:` is called
 
 // Sets the configuration and titles for the Notification's visible buttons. The number of buttonTitles supplied must match the configuration.
 - (void)setButtonConfiguration:(MPGNotificationButtonConfigration)configuration withButtonTitles:(NSArray *)buttonTitles;
+```
+
+## Example:
+
+```objc
+// construct notification
+UIImage *chatImage = [[UIImage imageNamed:@"icon-chat"] colorImageWhite];
+    
+MPGNotification *notification = 
+[MPGNotification notificationWithTitle:self.chat.playerName
+                              subtitle:self.chat.message
+                       backgroundColor:[UIColor customChatColor]
+                             iconImage:chatImage];
+
+// auto-dismiss after desired time in seconds
+notification.duration = 6.0;
+
+// button & touch handling
+notification.backgroundTapsEnabled = YES;
+[notification setButtonConfiguration:MPGNotificationButtonConfigrationOneButton withButtonTitles:@[@"Reply"]];
+
+// set animation type
+notification.animationType = MPGNotificationAnimationTypeDrop;
+
+// show the notification and handle button taps
+// (self.firstButton is the Reply button, self.backgroundView is the background tap)
+[notification showWithButtonHandler:^(MPGNotification *notification, NSInteger buttonIndex) {
+    
+    if (buttonIndex == notification.firstButton.tag ||
+        buttonIndex == notification.backgroundView.tag) {
+        [self scrollToChat];
+    }
+
+}];
 ```

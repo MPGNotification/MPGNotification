@@ -1,9 +1,9 @@
 //
-//    MPGNotification.h
-//    MPGNotification
+//  MPGNotification.h
+//  MPGNotification
 //
-//    Created by Gaurav Wadhwani on 28/06/14.
-//    Copyright (c) 2014 Mappgic. All rights reserved.
+//  Created by Gaurav Wadhwani on 28/06/14.
+//  Copyright (c) 2014 Mappgic. All rights reserved.
 //
 //    The MIT License (MIT)
 //
@@ -26,50 +26,81 @@
 //    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 //    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //    SOFTWARE.
-
+//
+//  https://github.com/MPGNotification/MPGNotification
 
 #import <UIKit/UIKit.h>
 
+@class MPGNotification;
+
+////////////////////////////////////////////////////////////////////////////////
+
 //Animation types to allow different animation entrance options for the notification.
-typedef enum {
+typedef NS_ENUM(NSInteger, MPGNotificationAnimationType) {
     MPGNotificationAnimationTypeLinear = 0,
     MPGNotificationAnimationTypeDrop,
     MPGNotificationAnimationTypeSnap
-} MPGNotificationAnimationType;
+};
 
-@protocol MPGNotificationDelegate;
+// Sets the UI configuration of buttons.
+typedef NS_ENUM(NSInteger, MPGNotificationButtonConfigration) {
+    MPGNotificationButtonConfigrationZeroButtons    = 0,
+    MPGNotificationButtonConfigrationOneButton,
+    MPGNotificationButtonConfigrationTwoButton,
+    MPGNotificationButtonConfigrationCloseButton
+};
 
-@interface MPGNotification : UIView <UIDynamicAnimatorDelegate>
+// Block to handle button presses
+typedef void (^MPGNotificationButtonHandler)(MPGNotification *notification, NSInteger buttonIndex);
 
-//Private property declarations.
-@property (nonatomic, strong) UIDynamicAnimator *animator;
-@property (nonatomic, weak) id <MPGNotificationDelegate> delegate;
+////////////////////////////////////////////////////////////////////////////////
 
-//Optional parameters to allow customisation of the notification UI.
+@interface MPGNotification : UIScrollView <UIScrollViewDelegate, UIDynamicAnimatorDelegate>
 
-//To set the title color of the notification
-@property (nonatomic) UIColor *titleColor;
+// Public accessors to private properties
+@property (nonatomic, readonly) UIView *backgroundView; // to read tag value
+@property (nonatomic, readonly) UIButton *firstButton; // to read tag value
+@property (nonatomic, readonly) UIButton *secondButton;  // to read tag value
+@property (nonatomic, readonly) UIButton *closeButton;  // to read tag value
 
-//To set the subtitle color of the notification
-@property (nonatomic) UIColor *subtitleColor;
+// Properties used for basic styling
+@property (nonatomic, strong) NSString *title; // required
+@property (nonatomic, strong) NSString *subtitle; // optional
+@property (nonatomic, strong) UIImage *iconImage; // optional
+@property (nonatomic, strong) UIColor *backgroundColor; // optional
 
-//Used to specify the type of animation that the notification should use to enter the screen. Can be one of the types from MPGNotificationAnimationType enum specified above.
+// Allows actions and dismissal when the background of the Notification is tapped. Defaults to YES.
+@property (nonatomic) BOOL backgroundTapsEnabled;
+
+// Allows 'swipe to dismiss' action on the Notification. Defaults to YES.
+@property (nonatomic) BOOL swipeToDismissEnabled;
+
+// To set the title color of the notification. Defaults to [UIColor whiteColor].
+@property (nonatomic, strong) UIColor *titleColor;
+
+// To set the subtitle color of the notification. Defaults to [UIColor whiteColor].
+@property (nonatomic, strong) UIColor *subtitleColor;
+
+// Set this to any positive value to automatically dismiss the Notification after the given duration. Defaults to 0.0;
+@property (nonatomic) NSTimeInterval duration;
+
+// Used to specify the type of animation that the notification should use to show and dismiss.
 @property (nonatomic) MPGNotificationAnimationType animationType;
 
-//Initilisation method for the notification. Please note that -initWithFrame: will not properly initiliase the notification. Use this method instead. Pass the values that you need in the notification ('title' is mandatory, all other parameters are optional)
-- (id)initWithTitle:(NSString *)title subtitle:(NSString *)subtitle image:(UIImage *)image backgroundColor:(UIColor *)color andButtonTitles:(NSArray *)buttonTitles;
+// Sets the button handler block directly; is also be set indirectly by calling showWithButtonHandler:
+@property (nonatomic, strong) MPGNotificationButtonHandler buttonHandler;
 
-//Call this method to show the notification on screen. Specify parameters like titleColor and animationType prior to calling this method
+// Convenience initializer class method (for manual setup, use init)
++ (MPGNotification *)notificationWithTitle:(NSString *)title subtitle:(NSString *)subtitle backgroundColor:(UIColor *)color iconImage:(UIImage *)image;
+
+// Sets the configuration and titles for the Notification's visible buttons. The number of buttonTitles supplied must match the configuration.
+- (void)setButtonConfiguration:(MPGNotificationButtonConfigration)configuration withButtonTitles:(NSArray *)buttonTitles;
+
+// Shows the notification on screen, optionally with a button handler completion block.
 - (void)show;
+- (void)showWithButtonHandler:(MPGNotificationButtonHandler)completionBlock;
 
-//Call this method to dismiss the notification. The notification will dismiss in the same animation as it appeared on screen. If the 'animated' variable is set NO, the notification will disappear without any animation.
+// Dismiss the notification. Occurs automatically if any enabled button is pressed.
 - (void)dismissWithAnimation:(BOOL)animated;
-
-@end
-
-@protocol MPGNotificationDelegate <NSObject>
-
-//Delegate method to inform that the notification was dismissed by the user and which button index was tapped to the caller.
-- (void)notificationView:(MPGNotification *)notification didDismissWithButtonIndex:(NSInteger)buttonIndex;
 
 @end

@@ -63,6 +63,12 @@ typedef void (^MPGNotificationButtonHandler)(MPGNotification *notification, NSIn
 @property (nonatomic, readonly) UIButton *secondButton;  // to read tag value
 @property (nonatomic, readonly) UIButton *closeButton;  // to read tag value
 
+// Properties used for basic styling
+@property (nonatomic, strong) NSString *title; // required
+@property (nonatomic, strong) NSString *subtitle; // optional
+@property (nonatomic, strong) UIImage *iconImage; // optional
+@property (nonatomic, strong) UIColor *backgroundColor; // optional
+
 // Allows actions and dismissal when the background of the Notification is tapped. Defaults to YES.
 @property (nonatomic) BOOL backgroundTapsEnabled;
 

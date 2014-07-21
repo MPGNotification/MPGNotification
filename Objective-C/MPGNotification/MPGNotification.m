@@ -57,14 +57,10 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 @property (nonatomic) UIWindowLevel windowLevel; // ensures the system status bar does not overlap the notification
 
 // always built
-@property (nonatomic, strong) NSString *title;
 @property (nonatomic, strong) UILabel *titleLabel;
 
 // optionally built
-@property (nonatomic, strong) UIImage *iconImage;
 @property (nonatomic, strong) UIImageView *iconImageView;
-
-@property (nonatomic, strong) NSString *subtitle;
 @property (nonatomic, strong) UILabel *subtitleLabel;
 
 @property (nonatomic, readwrite) UIView *backgroundView;
@@ -138,10 +134,6 @@ static const CGFloat kColorAdjustmentLight = 0.35;
         // Initialization code
     }
     return self;
-}
-
-- (void)dealloc {
-    NSLog(@"NOTIFICATION DEALLOC");
 }
 
 #pragma mark - Class Overrides

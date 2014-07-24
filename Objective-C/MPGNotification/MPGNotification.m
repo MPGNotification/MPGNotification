@@ -568,6 +568,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
                     self.contentOffset = CGPointMake(0, CGRectGetHeight(self.bounds));
                 } completion:^(BOOL finished){
                     [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:self.windowLevel];
+                    
                     [self _destroyNotification];
                 }];
                 break;
@@ -589,6 +590,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
         
         [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:self.windowLevel];
         
+        [self _dismissBlockHandler];
     }
     
 }
@@ -676,6 +678,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 }
 
 - (void)_destroyNotification {
+    [self _dismissBlockHandler];
     
     self.animator.delegate = nil;
     self.animator = nil;
@@ -698,6 +701,12 @@ static const CGFloat kColorAdjustmentLight = 0.35;
         self.buttonHandler(self, responder.tag);
     }
     
+}
+
+- (void)_dismissBlockHandler {
+    if (self.dismissHandler) {
+        self.dismissHandler(self);
+    }
 }
 
 @end

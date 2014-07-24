@@ -527,6 +527,8 @@ static const CGFloat kColorAdjustmentLight = 0.35;
             elasticityBehavior.elasticity = 0.3f;
             [self.animator addBehavior:elasticityBehavior];
             
+            [self _startDismissTimerIfSet];
+            
             break;
         }
             
@@ -544,7 +546,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
             snapBehaviour.damping = 0.50f;
             [self.animator addBehavior:snapBehaviour];
 
-            
+            [self _startDismissTimerIfSet];
             break;
         }
             

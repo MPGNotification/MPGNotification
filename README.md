@@ -136,6 +136,10 @@ All properties must be set *BEFORE* `show` or `showWithButtonHandler:` is called
 // Default: nil
 @property (nonatomic, strong) MPGNotificationButtonHandler buttonHandler;
 
+// Sets a dismiss hanlder block that is called when the Notification is dismissed
+// Default: nil
+@property (nonatomic, copy) MPGNotificationDismissHandler dismissHandler;
+
 // Read-only value of the current button configuration
 // Default: MPGNotificationButtonConfigrationZeroButtons
 @property (nonatomic, readonly) MPGNotificationButtonConfigration buttonConfiguration;

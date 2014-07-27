@@ -62,12 +62,24 @@
         subtitle = nil;
     }
     
-    notification = [[MPGNotification alloc] initWithTitle:@"Joey Dale" subtitle:subtitle image:icon backgroundColor:[_colorChooser tintColor] andButtonTitles:buttonArray];
+    notification = [MPGNotification notificationWithTitle:@"Joey Dale" subtitle:subtitle backgroundColor:[_colorChooser tintColor] iconImage:icon];
+    [notification setButtonConfiguration:buttonArray.count withButtonTitles:buttonArray];
+    notification.duration = 2.0;
+    
+    __weak typeof(self) weakSelf = self;
+    [notification setDismissHandler:^(MPGNotification *notification) {
+        [weakSelf.showNotificationButton setEnabled:YES];
+    }];
+    
+    [notification setButtonHandler:^(MPGNotification *notification, NSInteger buttonIndex) {
+        NSLog(@"buttonIndex : %d", buttonIndex);
+        [weakSelf.showNotificationButton setEnabled:YES];
+    }];
+    
     if (!([_colorChooser selectedSegmentIndex] == 3 || [_colorChooser selectedSegmentIndex] == 1)) {
         [notification setTitleColor:[UIColor whiteColor]];
         [notification setSubtitleColor:[UIColor whiteColor]];
     }
-    [notification setDelegate:self];
     
     switch ([_animationType selectedSegmentIndex]) {
         case 0:

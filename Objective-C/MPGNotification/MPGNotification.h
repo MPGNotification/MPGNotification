@@ -53,6 +53,9 @@ typedef NS_ENUM(NSInteger, MPGNotificationButtonConfigration) {
 // Block to handle button presses
 typedef void (^MPGNotificationButtonHandler)(MPGNotification *notification, NSInteger buttonIndex);
 
+// Block to handle Notification auto dismiss
+typedef void (^MPGNotificationDismissHandler)(MPGNotification *notification);
+
 ////////////////////////////////////////////////////////////////////////////////
 
 @interface MPGNotification : UIScrollView <UIScrollViewDelegate, UIDynamicAnimatorDelegate>
@@ -89,6 +92,9 @@ typedef void (^MPGNotificationButtonHandler)(MPGNotification *notification, NSIn
 
 // Sets the button handler block directly; is also be set indirectly by calling showWithButtonHandler:
 @property (nonatomic, strong) MPGNotificationButtonHandler buttonHandler;
+
+// Sets the dismiss hanlder block directly;
+@property (nonatomic, copy) MPGNotificationDismissHandler dismissHandler;
 
 // Convenience initializer class method (for manual setup, use init)
 + (MPGNotification *)notificationWithTitle:(NSString *)title subtitle:(NSString *)subtitle backgroundColor:(UIColor *)color iconImage:(UIImage *)image;

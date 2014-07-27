@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 #import "MPGNotification.h"
 
-@interface ViewController : UIViewController <MPGNotificationDelegate>
+@interface ViewController : UIViewController
 {
     MPGNotification *notification;
 }

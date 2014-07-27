@@ -37,10 +37,10 @@ static const CGFloat kNotificationHeight = 64;
 static const CGFloat kIconImageSize = 32.0;
 static const NSTimeInterval kLinearAnimationTime = 0.25;
 
-static const NSString *kTitleFontName = @"HelveticaNeue-Bold";
+const NSString *kTitleFontName = @"HelveticaNeue-Bold";
 static const CGFloat kTitleFontSize = 17.0;
 
-static const NSString *kSubtitleFontName = @"HelveticaNeue";
+const NSString *kSubtitleFontName = @"HelveticaNeue";
 static const CGFloat kSubtitleFontSize = 14.0;
 
 static const CGFloat kButtonFontSize = 13.0;
@@ -158,7 +158,6 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     static const CGFloat kButtonOriginXOffset = 75;
     static const CGFloat kCloseButtonOriginXOffset = 40;
     
-    static const CGFloat kButtonWidthClose = 25;
     static const CGFloat kButtonWidthDefault = 64;
     static const CGFloat kButtonPadding = 2.5;
     

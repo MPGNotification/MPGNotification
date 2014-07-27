@@ -183,14 +183,13 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     static const CGFloat kTitleLabelPaddingX = 8;
     static const CGFloat kTitleLabelHeight = 20;
     
-    CGFloat textPaddingX = (self.iconImageView) ? CGRectGetMaxX(self.iconImageView.frame) + kTitleLabelPaddingX : kPaddingX;
-    CGFloat textTrailingX = (self.firstButton) ? CGRectGetWidth(self.bounds) - CGRectGetMinX(self.firstButton.frame) + 9 : 20;
+    CGFloat textPaddingX = (self.iconImage) ? CGRectGetMaxX(self.iconImageView.frame) + kTitleLabelPaddingX : kPaddingX+5;
+    CGFloat textTrailingX = (self.firstButton) ? CGRectGetWidth(self.bounds) - CGRectGetMinX(self.firstButton.frame) + 9 : 10;
     CGFloat textWidth = notificationWidth - (textPaddingX + textTrailingX);
     
     // expected subtitle calculations
-    // TODO: this method is deprecated; update this (use Evil Studios NSString category?)
     static const CGFloat kSubtitleHeight = 50;
-    CGSize expectedSubtitleSize;// = [self.subtitle sizeWithFont:self.subtitleLabel.font constrainedToSize:CGSizeMake(textWidth, kSubtitleHeight)];
+    CGSize expectedSubtitleSize;
     
     // use new sizeWithAttributes: if possible
     SEL selector = NSSelectorFromString(@"sizeWithAttributes:");
@@ -263,24 +262,18 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 }
 
 - (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
-    
     if (!decelerate &&
         [self _notificationOffScreen] &&
         self.notificationRevealed) {
-        
         [self _destroyNotification];
-        
     }
-    
 }
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
-    
     if ([self _notificationOffScreen] &&
         self.notificationRevealed) {
         [self _destroyNotification];
     }
-    
 }
 
 #pragma mark - UIDynamicAnimator Delegate

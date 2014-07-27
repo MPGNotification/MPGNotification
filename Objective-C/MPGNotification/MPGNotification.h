@@ -91,7 +91,7 @@ typedef void (^MPGNotificationDismissHandler)(MPGNotification *notification);
 @property (nonatomic) MPGNotificationAnimationType animationType;
 
 // Sets the button handler block directly; is also be set indirectly by calling showWithButtonHandler:
-@property (nonatomic, strong) MPGNotificationButtonHandler buttonHandler;
+@property (nonatomic, copy) MPGNotificationButtonHandler buttonHandler;
 
 // Sets the dismiss hanlder block directly;
 @property (nonatomic, copy) MPGNotificationDismissHandler dismissHandler;

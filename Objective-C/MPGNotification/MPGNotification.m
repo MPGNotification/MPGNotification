@@ -37,10 +37,10 @@ static const CGFloat kNotificationHeight = 64;
 static const CGFloat kIconImageSize = 32.0;
 static const NSTimeInterval kLinearAnimationTime = 0.25;
 
-const NSString *kTitleFontName = @"HelveticaNeue-Bold";
+NSString * const kTitleFontName = @"HelveticaNeue-Bold";
 static const CGFloat kTitleFontSize = 17.0;
 
-const NSString *kSubtitleFontName = @"HelveticaNeue";
+NSString * const kSubtitleFontName = @"HelveticaNeue";
 static const CGFloat kSubtitleFontSize = 14.0;
 
 static const CGFloat kButtonFontSize = 13.0;
@@ -190,8 +190,24 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     // expected subtitle calculations
     // TODO: this method is deprecated; update this (use Evil Studios NSString category?)
     static const CGFloat kSubtitleHeight = 50;
-    CGSize expectedSubtitleSize = [self.subtitle sizeWithFont:self.subtitleLabel.font
-                                            constrainedToSize:CGSizeMake(textWidth, kSubtitleHeight)];
+    CGSize expectedSubtitleSize;// = [self.subtitle sizeWithFont:self.subtitleLabel.font constrainedToSize:CGSizeMake(textWidth, kSubtitleHeight)];
+    
+    // use new sizeWithAttributes: if possible
+    SEL selector = NSSelectorFromString(@"sizeWithAttributes:");
+    if ([self.subtitle respondsToSelector:selector]) {
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 70000
+        NSDictionary *attributes = @{NSFontAttributeName:self.subtitleLabel.font};
+        CGRect rect = [self.subtitle boundingRectWithSize:CGSizeMake(textWidth, kSubtitleHeight) options:NSStringDrawingUsesLineFragmentOrigin attributes:attributes context:nil];
+        expectedSubtitleSize = rect.size;
+#endif
+    }
+    
+    // otherwise use old sizeWithFont:
+    else {
+#if __IPHONE_OS_VERSION_MIN_REQUIRED < 70000 // only when deployment target is < ios7
+        textSize = [self.textLabel.text sizeWithFont:self.textLabel.font];
+#endif
+    }
     
     BOOL subtitleEmpty = (self.subtitle == nil || self.subtitle.length == 0);
     BOOL subtitleOneLiner = (expectedSubtitleSize.height < 25 && subtitleEmpty == NO);
@@ -214,18 +230,19 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     [self.subtitleLabel sizeToFit];
     
     
-    // SWIPE HINT VIEW
-    static const CGFloat kSwipeHintWidth = 37;
-    static const CGFloat kSwipeHintHeight = 5;
-    static const CGFloat kSwipeHintTrailingY = 5;
-    
-    self.swipeHintView.frame = CGRectMake(0.5 * (CGRectGetWidth(self.backgroundView.bounds) - kSwipeHintWidth),
-                                          CGRectGetHeight(self.backgroundView.bounds) - kSwipeHintTrailingY - kSwipeHintHeight,
-                                          kSwipeHintWidth,
-                                          kSwipeHintHeight);
-    
-    self.swipeHintView.layer.cornerRadius = CGRectGetHeight(self.swipeHintView.bounds) * 0.5;
-    
+    // SWIPE HINT VIEW, ONLY SHOW IF ENABLED
+    if(self.swipeToDismissEnabled){
+        static const CGFloat kSwipeHintWidth = 37;
+        static const CGFloat kSwipeHintHeight = 5;
+        static const CGFloat kSwipeHintTrailingY = 5;
+        
+        self.swipeHintView.frame = CGRectMake(0.5 * (CGRectGetWidth(self.backgroundView.bounds) - kSwipeHintWidth),
+                                              CGRectGetHeight(self.backgroundView.bounds) - kSwipeHintTrailingY - kSwipeHintHeight,
+                                              kSwipeHintWidth,
+                                              kSwipeHintHeight);
+        
+        self.swipeHintView.layer.cornerRadius = CGRectGetHeight(self.swipeHintView.bounds) * 0.5;
+    }
     
     // COLORS!!
     self.swipeHintView.backgroundColor = [self _darkerColorForColor:self.backgroundColor];

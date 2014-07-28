@@ -80,6 +80,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 
 @property (assign) int countdown;
 @property (nonatomic) NSTimer *timerForAutoDismiss;
+@property (strong, retain)UIWindow *customWindow;
 
 
 @end
@@ -269,7 +270,10 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 #pragma mark - UIDynamicAnimator Delegate
 
 - (void)dynamicAnimatorDidPause:(UIDynamicAnimator *)animator {
-	[self _destroyNotification];
+
+    //Did pause will be called multiple times
+    //[self removeCustomWindow];
+	//[self _destroyNotification];
 }
 
 #pragma mark - Class Methods
@@ -453,13 +457,23 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 
 	UIWindow *window = [self _topAppWindow];
 
-	self.windowLevel = [[[[UIApplication sharedApplication] delegate] window] windowLevel];
+    //TODO: Code refactoring
+    //This wont be needed now as we are not manipulating common window now.
+	//self.windowLevel = [[[[UIApplication sharedApplication] delegate] window] windowLevel];
 
 	// Update windowLevel to make sure status bar does not interfere with the notification
-	[[[[UIApplication sharedApplication] delegate] window] setWindowLevel:UIWindowLevelStatusBar + 1];
+	//[[[[UIApplication sharedApplication] delegate] window] setWindowLevel:UIWindowLevelNormal];
 
 	// add the notification to the screen
 	[window.subviews.lastObject addSubview:self];
+    
+    //Instead of adding frame to existing window level, create a new window with expected windowlevel, add the view to it and make the window visible, remove window when done.
+    _customWindow = [[UIWindow alloc] initWithFrame:self.frame];
+    _customWindow.windowLevel = UIWindowLevelStatusBar+1;
+    [_customWindow addSubview:self];
+    
+    [_customWindow makeKeyAndVisible];
+    
 
 	switch (self.animationType) {
 		case MPGNotificationAnimationTypeLinear: {
@@ -533,8 +547,9 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 				[UIView animateWithDuration:kLinearAnimationTime animations: ^{
 				    self.contentOffset = CGPointMake(0, CGRectGetHeight(self.bounds));
 				} completion: ^(BOOL finished) {
-				    [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:self.windowLevel];
+				   // [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:self.windowLevel];
 
+                    [self removeCustomWindow];
 				    [self _destroyNotification];
 				}];
 				break;
@@ -545,18 +560,37 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 				[self.animator setDelegate:self];
 				UISnapBehavior *snapBehaviour = [[UISnapBehavior alloc] initWithItem:self.backgroundView snapToPoint:CGPointMake(viewBounds.size.width, -74)];
 				snapBehaviour.damping = 0.75f;
-				[self.animator addBehavior:snapBehaviour];
-
-				[[[[UIApplication sharedApplication] delegate] window] setWindowLevel:self.windowLevel];
+               
+                [self.animator addBehavior:snapBehaviour];
+                //we will remove our custom window after its stop delegate is called.
+               
+                
+				//[[[[UIApplication sharedApplication] delegate] window] setWindowLevel:self.windowLevel];
 				break;
 			}
 		}
 	}
 	else {
-		[[[[UIApplication sharedApplication] delegate] window] setWindowLevel:self.windowLevel];
+        
+        [self removeCustomWindow];
+		//[[[[UIApplication sharedApplication] delegate] window] setWindowLevel:self.windowLevel];
 
 		[self _dismissBlockHandler];
 	}
+    
+    
+}
+
+
+
+-(void)removeCustomWindow{
+
+    if (_customWindow) {
+        
+        [_customWindow removeFromSuperview];
+        _customWindow = nil;
+    }
+    
 }
 
 #pragma mark - Private Methods - Taps & Gestures
@@ -659,11 +693,9 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 - (void)_responderTapped:(id)responder {
 	[self _dismissAnimated:YES];
 
-	NSLog(@"responder %@", NSStringFromClass([responder class]));
 	if (self.buttonHandler) {
 		if ([responder isKindOfClass:[UIButton class]]) {
 			UIButton *button = (UIButton *)responder;
-			NSLog(@"here [self getTitleFromString:button.titleLabel.text] %@", [self getTitleFromString:button.titleLabel.text]);
 			self.buttonHandler(self, button.tag, [self getTitleFromString:button.titleLabel.text]);
 		}
 		else {

@@ -308,6 +308,8 @@ static const CGFloat kColorAdjustmentLight = 0.35;
         self.titleLabel = [[UILabel alloc] initWithFrame:CGRectZero];
         [self.backgroundView addSubview:self.titleLabel];
         
+        self.titleLabel.backgroundColor = [UIColor clearColor];
+        
         self.titleLabel.font = [UIFont fontWithName:kTitleFontName size:kTitleFontSize];
     }
     
@@ -322,6 +324,8 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     if (!self.subtitleLabel) {
         self.subtitleLabel = [[UILabel alloc] initWithFrame:CGRectMake(1, 1, 1, 1)];
         [self.backgroundView addSubview:self.subtitleLabel];
+        
+        self.subtitleLabel.backgroundColor = [UIColor clearColor];
         
         self.subtitleLabel.font = [UIFont fontWithName:kSubtitleFontName size:kSubtitleFontSize];
         self.subtitleLabel.numberOfLines = 2;

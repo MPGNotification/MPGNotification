@@ -64,15 +64,18 @@
     
     notification = [MPGNotification notificationWithTitle:@"Joey Dale" subtitle:subtitle backgroundColor:[_colorChooser tintColor] iconImage:icon];
     [notification setButtonConfiguration:buttonArray.count withButtonTitles:buttonArray];
-    notification.duration = 2.0;
+    notification.duration = 20.0;
+    
+    notification.firstButtonShowCountdown = YES;
+    notification.secondButtonShowCountdown = YES;
     
     __weak typeof(self) weakSelf = self;
     [notification setDismissHandler:^(MPGNotification *notification) {
         [weakSelf.showNotificationButton setEnabled:YES];
     }];
     
-    [notification setButtonHandler:^(MPGNotification *notification, NSInteger buttonIndex) {
-        NSLog(@"buttonIndex : %d", buttonIndex);
+    [notification setButtonHandler:^(MPGNotification *notification, NSInteger buttonIndex, NSString *buttonTitle ) {
+        NSLog(@"buttonIndex : %d buttonTitle %@", buttonIndex,buttonTitle);
         [weakSelf.showNotificationButton setEnabled:YES];
     }];
     

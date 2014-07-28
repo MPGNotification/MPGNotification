@@ -51,10 +51,11 @@ typedef NS_ENUM(NSInteger, MPGNotificationButtonConfigration) {
 };
 
 // Block to handle button presses
-typedef void (^MPGNotificationButtonHandler)(MPGNotification *notification, NSInteger buttonIndex);
+typedef void (^MPGNotificationButtonHandler)(MPGNotification *notification, NSInteger buttonIndex, NSString *buttonTitle);
 
 // Block to handle Notification auto dismiss
 typedef void (^MPGNotificationDismissHandler)(MPGNotification *notification);
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -71,6 +72,10 @@ typedef void (^MPGNotificationDismissHandler)(MPGNotification *notification);
 @property (nonatomic, strong) NSString *subtitle; // optional
 @property (nonatomic, strong) UIImage *iconImage; // optional
 @property (nonatomic, strong) UIColor *backgroundColor; // optional
+
+@property (nonatomic, assign) BOOL firstButtonShowCountdown;
+@property (nonatomic, assign) BOOL secondButtonShowCountdown;
+
 
 // Allows actions and dismissal when the background of the Notification is tapped. Defaults to YES.
 @property (nonatomic) BOOL backgroundTapsEnabled;

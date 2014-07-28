@@ -5,34 +5,34 @@
 	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
 	<false/>
 	<key>IDESourceControlProjectIdentifier</key>
-	<string>D259A0AB-7F7D-4A69-B3AF-97C277840871</string>
+	<string>8064F83D-8809-487B-9027-C4F1898CE758</string>
 	<key>IDESourceControlProjectName</key>
 	<string>MPGNotificationDemo</string>
 	<key>IDESourceControlProjectOriginsDictionary</key>
 	<dict>
-		<key>EC5DE40B-D9AD-43CC-9B3B-7E5F055F92D1</key>
-		<string>https://github.com/xhzengAIB/MPGNotification.git</string>
+		<key>F3D0F0B0-07CE-4AA5-BF03-CADA84CD9737</key>
+		<string>https://github.com/varshylmobile/MPGNotification.git</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
 	<string>Objective-C/MPGNotificationDemo/MPGNotificationDemo.xcodeproj/project.xcworkspace</string>
 	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
 	<dict>
-		<key>EC5DE40B-D9AD-43CC-9B3B-7E5F055F92D1</key>
+		<key>F3D0F0B0-07CE-4AA5-BF03-CADA84CD9737</key>
 		<string>../../../..</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
-	<string>https://github.com/xhzengAIB/MPGNotification.git</string>
+	<string>https://github.com/varshylmobile/MPGNotification.git</string>
 	<key>IDESourceControlProjectVersion</key>
 	<integer>110</integer>
 	<key>IDESourceControlProjectWCCIdentifier</key>
-	<string>EC5DE40B-D9AD-43CC-9B3B-7E5F055F92D1</string>
+	<string>F3D0F0B0-07CE-4AA5-BF03-CADA84CD9737</string>
 	<key>IDESourceControlProjectWCConfigurations</key>
 	<array>
 		<dict>
 			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
 			<string>public.vcs.git</string>
 			<key>IDESourceControlWCCIdentifierKey</key>
-			<string>EC5DE40B-D9AD-43CC-9B3B-7E5F055F92D1</string>
+			<string>F3D0F0B0-07CE-4AA5-BF03-CADA84CD9737</string>
 			<key>IDESourceControlWCCName</key>
 			<string>MPGNotification</string>
 		</dict>

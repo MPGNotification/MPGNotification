@@ -7,7 +7,7 @@ Pod::Spec.new do |s|
   s.license      = { :type => "MIT", :file => "LICENSE" }
   s.authors      = { 'Sean Conrad' => 'toblerpwn@gmail.com', 'Gaurav Wadhwani' => 'http://gww.mappgic.com/' }
   s.platform     = :ios, "6.0"
-  s.source       = { :git => "https://github.com/MPGNotification/MPGNotification.git", :tag => 1.1.1 }
+  s.source       = { :git => "https://github.com/MPGNotification/MPGNotification.git", :tag => '1.1.1' }
   s.source_files  = "Objective-C/MPGNotification/*"
   s.requires_arc = true
 end

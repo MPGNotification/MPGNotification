@@ -261,6 +261,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     
     if ([self _notificationOffScreen] &&
         self.notificationRevealed) {
+        [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:self.windowLevel];
         [self _destroyNotification];
     }
     

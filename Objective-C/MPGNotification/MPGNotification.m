@@ -436,7 +436,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
             
             NSString *firstButtonTitle = buttonTitles[0];
             if (!self.firstButton) {
-                self.firstButton = [self _newButtonWithTitle:firstButtonTitle withTag:buttonTag];
+                self.firstButton = [self _newButtonWithTitle:firstButtonTitle withTag:MPGNotificationButtonConfigrationOneButton];
                 [self.backgroundView addSubview:self.firstButton];
             } else {
                 [self.firstButton setTitle:firstButtonTitle forState:UIControlStateNormal];
@@ -446,7 +446,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
                 
                 NSString *secondButtonTitle = buttonTitles[1];
                 if (!self.secondButton) {
-                    self.secondButton = [self _newButtonWithTitle:secondButtonTitle withTag:buttonTag];
+                    self.secondButton = [self _newButtonWithTitle:secondButtonTitle withTag:MPGNotificationButtonConfigrationTwoButton];
                     [self.backgroundView addSubview:self.secondButton];
                 } else {
                     [self.secondButton setTitle:firstButtonTitle forState:UIControlStateNormal];

@@ -444,9 +444,12 @@ static const CGFloat kColorAdjustmentLight = 0.35;
             
             if (configuration == MPGNotificationButtonConfigrationTwoButton) {
                 
+                NSInteger tagIncrement = 4317; // large, random increment to prevent overlapping tags
+                NSInteger tag = buttonTag + tagIncrement;
+                
                 NSString *secondButtonTitle = buttonTitles[1];
                 if (!self.secondButton) {
-                    self.secondButton = [self _newButtonWithTitle:secondButtonTitle withTag:buttonTag];
+                    self.secondButton = [self _newButtonWithTitle:secondButtonTitle withTag:tag];
                     [self.backgroundView addSubview:self.secondButton];
                 } else {
                     [self.secondButton setTitle:firstButtonTitle forState:UIControlStateNormal];

@@ -183,8 +183,8 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     static const CGFloat kTitleLabelPaddingX = 8;
     static const CGFloat kTitleLabelHeight = 20;
     
-    CGFloat textPaddingX = (self.iconImage) ? CGRectGetMaxX(self.iconImageView.frame) + kTitleLabelPaddingX : kPaddingX+5;
-    CGFloat textTrailingX = (self.firstButton) ? CGRectGetWidth(self.bounds) - CGRectGetMinX(self.firstButton.frame) + 9 : 10;
+    CGFloat textPaddingX = (self.iconImage) ? CGRectGetMaxX(self.iconImageView.frame) + kTitleLabelPaddingX : kPaddingX + 5;
+    CGFloat textTrailingX = (self.firstButton) ? CGRectGetWidth(self.bounds) - CGRectGetMinX(self.firstButton.frame) + 9 : 20;
     CGFloat textWidth = notificationWidth - (textPaddingX + textTrailingX);
     
     // expected subtitle calculations
@@ -204,7 +204,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     // otherwise use old sizeWithFont:
     else {
 #if __IPHONE_OS_VERSION_MIN_REQUIRED < 70000 // only when deployment target is < ios7
-        textSize = [self.textLabel.text sizeWithFont:self.textLabel.font];
+        expectedSubtitleSize = [self.subtitle sizeWithFont:self.subtitleLabel.font];
 #endif
     }
     

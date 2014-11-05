@@ -136,6 +136,10 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     return self;
 }
 
+//- (void)dealloc {
+//    NSLog(@"DEBUG: NOTIFICATION DEALLOC");
+//}
+
 #pragma mark - Class Overrides
 
 - (void)layoutSubviews {
@@ -265,6 +269,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     if (!decelerate &&
         [self _notificationOffScreen] &&
         self.notificationRevealed) {
+        
         [self _destroyNotification];
     }
 }
@@ -283,6 +288,16 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 }
 
 #pragma mark - Class Methods
+
++ (MPGNotification *)notificationWithHostViewController:(UIViewController *)hostViewController title:(NSString *)title subtitle:(NSString *)subtitle backgroundColor:(UIColor *)color iconImage:(UIImage *)image {
+    
+    MPGNotification *newNotification = [MPGNotification notificationWithTitle:title subtitle:subtitle backgroundColor:color iconImage:image];
+    
+    newNotification.hostViewController = hostViewController;
+    
+    return newNotification;
+    
+}
 
 + (MPGNotification *)notificationWithTitle:(NSString *)title subtitle:(NSString *)subtitle backgroundColor:(UIColor *)color iconImage:(UIImage *)image {
     
@@ -393,6 +408,16 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     
 }
 
+- (void)setHostViewController:(UIViewController *)hostViewController {
+    
+    if (self.notificationRevealed && hostViewController == nil) {
+        NSAssert(NO, @"Cannot set hostViewController to nil after the Notification has been revealed.");
+    } else {
+        _hostViewController = hostViewController;
+    }
+    
+}
+
 #pragma mark - Public Methods
 
 - (void)setButtonConfiguration:(MPGNotificationButtonConfigration)configuration withButtonTitles:(NSArray *)buttonTitles {
@@ -494,15 +519,23 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     
     self.notificationRevealed = YES;
     
-    UIWindow *window = [self _topAppWindow];
-    
-    self.windowLevel = [[[[UIApplication sharedApplication] delegate] window] windowLevel];
-    
-    // Update windowLevel to make sure status bar does not interfere with the notification
-    [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:UIWindowLevelStatusBar+1];
-    
-    // add the notification to the screen
-    [window.subviews.lastObject addSubview:self];
+    if (self.hostViewController) {
+        
+        [self.hostViewController.view addSubview:self];
+        
+    } else {
+        
+        UIWindow *window = [self _topAppWindow];
+        
+        self.windowLevel = [[[[UIApplication sharedApplication] delegate] window] windowLevel];
+        
+        // Update windowLevel to make sure status bar does not interfere with the notification
+        [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:UIWindowLevelStatusBar+1];
+        
+        // add the notification to the screen
+        [window.subviews.lastObject addSubview:self];
+        
+    }
     
     switch (self.animationType) {
         case MPGNotificationAnimationTypeLinear: {
@@ -522,7 +555,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
         case MPGNotificationAnimationTypeDrop: {
             
             self.backgroundView.center = CGPointMake(self.center.x,
-                                                       self.center.y - CGRectGetHeight(self.bounds));
+                                                     self.center.y - CGRectGetHeight(self.bounds));
             
             self.animator = [[UIDynamicAnimator alloc] initWithReferenceView:self];
             
@@ -551,7 +584,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
         case MPGNotificationAnimationTypeSnap: {
             
             self.backgroundView.center = CGPointMake(self.center.x,
-                                                       self.center.y - 2 * CGRectGetHeight(self.bounds));
+                                                     self.center.y - 2 * CGRectGetHeight(self.bounds));
             
             self.animator = [[UIDynamicAnimator alloc] initWithReferenceView:self];
             
@@ -561,7 +594,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
             UISnapBehavior *snapBehaviour = [[UISnapBehavior alloc] initWithItem:self.backgroundView snapToPoint:centerPoint];
             snapBehaviour.damping = 0.50f;
             [self.animator addBehavior:snapBehaviour];
-
+            
             [self _startDismissTimerIfSet];
             break;
         }
@@ -585,8 +618,6 @@ static const CGFloat kColorAdjustmentLight = 0.35;
                 [UIView animateWithDuration:kLinearAnimationTime animations:^{
                     self.contentOffset = CGPointMake(0, CGRectGetHeight(self.bounds));
                 } completion:^(BOOL finished){
-                    [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:self.windowLevel];
-                    
                     [self _destroyNotification];
                 }];
                 break;
@@ -598,17 +629,13 @@ static const CGFloat kColorAdjustmentLight = 0.35;
                 UISnapBehavior *snapBehaviour = [[UISnapBehavior alloc] initWithItem:self.backgroundView snapToPoint:CGPointMake(viewBounds.size.width, -74)];
                 snapBehaviour.damping = 0.75f;
                 [self.animator addBehavior:snapBehaviour];
-                
-                [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:self.windowLevel];
                 break;
             }
         }
         
     } else {
         
-        [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:self.windowLevel];
-        
-        [self _dismissBlockHandler];
+        [self _destroyNotification];
     }
     
 }
@@ -696,6 +723,11 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 }
 
 - (void)_destroyNotification {
+    
+    if (self.hostViewController == nil) {
+        [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:self.windowLevel];
+    }
+    
     [self _dismissBlockHandler];
     
     self.animator.delegate = nil;
@@ -724,6 +756,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 - (void)_dismissBlockHandler {
     if (self.dismissHandler) {
         self.dismissHandler(self);
+        self.dismissHandler = nil;
     }
 }
 

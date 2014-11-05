@@ -72,6 +72,9 @@ typedef void (^MPGNotificationDismissHandler)(MPGNotification *notification);
 @property (nonatomic, strong) UIImage *iconImage; // optional
 @property (nonatomic, strong) UIColor *backgroundColor; // optional
 
+// Optional property specifying the view controller that displays the Notification. Defaults to nil; if nil, the current UIWindow's windowLevel value is used to cache and restore the state of the application.
+@property (nonatomic, weak) UIViewController *hostViewController;
+
 // Allows actions and dismissal when the background of the Notification is tapped. Defaults to YES.
 @property (nonatomic) BOOL backgroundTapsEnabled;
 
@@ -96,8 +99,9 @@ typedef void (^MPGNotificationDismissHandler)(MPGNotification *notification);
 // Sets the dismiss hanlder block directly;
 @property (nonatomic, copy) MPGNotificationDismissHandler dismissHandler;
 
-// Convenience initializer class method (for manual setup, use init)
+// Convenience initializer class methods (for manual setup, use init)
 + (MPGNotification *)notificationWithTitle:(NSString *)title subtitle:(NSString *)subtitle backgroundColor:(UIColor *)color iconImage:(UIImage *)image;
++ (MPGNotification *)notificationWithHostViewController:(UIViewController *)hostViewController title:(NSString *)title subtitle:(NSString *)subtitle backgroundColor:(UIColor *)color iconImage:(UIImage *)image;
 
 // Sets the configuration and titles for the Notification's visible buttons. The number of buttonTitles supplied must match the configuration.
 - (void)setButtonConfiguration:(MPGNotificationButtonConfigration)configuration withButtonTitles:(NSArray *)buttonTitles;

@@ -82,11 +82,18 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+static NSMutableArray *notifications;
+
 @implementation MPGNotification
 
 // designated initializer
 - (instancetype)init
 {
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{
+		notifications = [NSMutableArray new];
+	});
+	
     // If the App has a keyWindow, get it, else get the 'top'-most window in the App's hierarchy.
     UIWindow *window = [self _topAppWindow];
 
@@ -516,105 +523,115 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 - (void)_showNotification {
     
     // Called to display the initiliased notification on screen.
-    
-    self.notificationRevealed = YES;
-    
-    if (self.hostViewController) {
-        
-        [self.hostViewController.view addSubview:self];
-        
-    } else {
-        
-        UIWindow *window = [self _topAppWindow];
-        
-        self.windowLevel = [[[[UIApplication sharedApplication] delegate] window] windowLevel];
-        
-        // Update windowLevel to make sure status bar does not interfere with the notification
-        [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:UIWindowLevelStatusBar+1];
-        
-        // add the notification to the screen
-        [window.subviews.lastObject addSubview:self];
-        
-    }
-    
-    switch (self.animationType) {
-        case MPGNotificationAnimationTypeLinear: {
-            
-            // move notification off-screen
-            self.contentOffset = CGPointMake(0, CGRectGetHeight(self.bounds));
-            
-            [UIView animateWithDuration:kLinearAnimationTime animations:^{
-                self.contentOffset = CGPointZero;
-            } completion:^(BOOL finished) {
-                [self _startDismissTimerIfSet];
-            }];
-            
-            break;
-        }
-            
-        case MPGNotificationAnimationTypeDrop: {
-            
-            self.backgroundView.center = CGPointMake(self.center.x,
-                                                     self.center.y - CGRectGetHeight(self.bounds));
-            
-            self.animator = [[UIDynamicAnimator alloc] initWithReferenceView:self];
-            
-            UIGravityBehavior* gravityBehavior = [[UIGravityBehavior alloc] initWithItems:@[self.backgroundView]];
-            [self.animator addBehavior:gravityBehavior];
-            
-            CGFloat notificationWidth = CGRectGetWidth(self.bounds);
-            CGFloat notificationHeight = CGRectGetHeight(self.bounds);
-            
-            UICollisionBehavior* collisionBehavior = [[UICollisionBehavior alloc] initWithItems:@[self.backgroundView]];
-            [collisionBehavior addBoundaryWithIdentifier:@"MPGNotificationBoundary"
-                                               fromPoint:CGPointMake(0, notificationHeight)
-                                                 toPoint:CGPointMake(notificationWidth, notificationHeight)];
-            
-            [self.animator addBehavior:collisionBehavior];
-            
-            UIDynamicItemBehavior *elasticityBehavior = [[UIDynamicItemBehavior alloc] initWithItems:@[self.backgroundView]];
-            elasticityBehavior.elasticity = 0.3f;
-            [self.animator addBehavior:elasticityBehavior];
-            
-            [self _startDismissTimerIfSet];
-            
-            break;
-        }
-            
-        case MPGNotificationAnimationTypeSnap: {
-            
-            self.backgroundView.center = CGPointMake(self.center.x,
-                                                     self.center.y - 2 * CGRectGetHeight(self.bounds));
-            
-            self.animator = [[UIDynamicAnimator alloc] initWithReferenceView:self];
-            
-            CGPoint centerPoint = CGPointMake(CGRectGetWidth(self.bounds) * 0.5,
-                                              CGRectGetHeight(self.bounds) * 0.5);
-            
-            UISnapBehavior *snapBehaviour = [[UISnapBehavior alloc] initWithItem:self.backgroundView snapToPoint:centerPoint];
-            snapBehaviour.damping = 0.50f;
-            [self.animator addBehavior:snapBehaviour];
-            
-            [self _startDismissTimerIfSet];
-            break;
-        }
-            
-    }
-    
+	@synchronized(notifications) {
+		[notifications addObject:self];
+	}
+	if (notifications.count > 1) {
+		return;
+	}
+	else {
+		[self _showNotificationImmediately];
+	}
+}
+
+- (void)_showNotificationImmediately {
+	self.notificationRevealed = YES;
+	
+	if (self.hostViewController) {
+		
+		[self.hostViewController.view addSubview:self];
+		
+	} else {
+		
+		UIWindow *window = [self _topAppWindow];
+		
+		self.windowLevel = [[[[UIApplication sharedApplication] delegate] window] windowLevel];
+		
+		// Update windowLevel to make sure status bar does not interfere with the notification
+		[[[[UIApplication sharedApplication] delegate] window] setWindowLevel:UIWindowLevelStatusBar+1];
+		
+		// add the notification to the screen
+		[window.subviews.lastObject addSubview:self];
+		
+	}
+	
+	switch (self.animationType) {
+		case MPGNotificationAnimationTypeLinear: {
+			
+			// move notification off-screen
+			self.contentOffset = CGPointMake(0, CGRectGetHeight(self.bounds));
+			
+			[UIView animateWithDuration:kLinearAnimationTime animations:^{
+				self.contentOffset = CGPointZero;
+			} completion:^(BOOL finished) {
+				[self _startDismissTimerIfSet];
+			}];
+			
+			break;
+		}
+			
+		case MPGNotificationAnimationTypeDrop: {
+			
+			self.backgroundView.center = CGPointMake(self.center.x,
+													 self.center.y - CGRectGetHeight(self.bounds));
+			
+			self.animator = [[UIDynamicAnimator alloc] initWithReferenceView:self];
+			
+			UIGravityBehavior* gravityBehavior = [[UIGravityBehavior alloc] initWithItems:@[self.backgroundView]];
+			[self.animator addBehavior:gravityBehavior];
+			
+			CGFloat notificationWidth = CGRectGetWidth(self.bounds);
+			CGFloat notificationHeight = CGRectGetHeight(self.bounds);
+			
+			UICollisionBehavior* collisionBehavior = [[UICollisionBehavior alloc] initWithItems:@[self.backgroundView]];
+			[collisionBehavior addBoundaryWithIdentifier:@"MPGNotificationBoundary"
+											   fromPoint:CGPointMake(0, notificationHeight)
+												 toPoint:CGPointMake(notificationWidth, notificationHeight)];
+			
+			[self.animator addBehavior:collisionBehavior];
+			
+			UIDynamicItemBehavior *elasticityBehavior = [[UIDynamicItemBehavior alloc] initWithItems:@[self.backgroundView]];
+			elasticityBehavior.elasticity = 0.3f;
+			[self.animator addBehavior:elasticityBehavior];
+			
+			[self _startDismissTimerIfSet];
+			
+			break;
+		}
+			
+		case MPGNotificationAnimationTypeSnap: {
+			
+			self.backgroundView.center = CGPointMake(self.center.x,
+													 self.center.y - 2 * CGRectGetHeight(self.bounds));
+			
+			self.animator = [[UIDynamicAnimator alloc] initWithReferenceView:self];
+			
+			CGPoint centerPoint = CGPointMake(CGRectGetWidth(self.bounds) * 0.5,
+											  CGRectGetHeight(self.bounds) * 0.5);
+			
+			UISnapBehavior *snapBehaviour = [[UISnapBehavior alloc] initWithItem:self.backgroundView snapToPoint:centerPoint];
+			snapBehaviour.damping = 0.50f;
+			[self.animator addBehavior:snapBehaviour];
+			
+			[self _startDismissTimerIfSet];
+			break;
+		}
+			
+	}
 }
 
 - (void)_dismissAnimated:(BOOL)animated {
-    
+	
     //Call this method to dismiss the notification. The notification will dismiss in the same animation as it appeared on screen. If the 'animated' variable is set NO, the notification will disappear without any animation.
     CGRect viewBounds = [self.superview bounds];
     if (animated) {
-        
+		
         switch (self.animationType) {
-            
+				
             // deliberately capturing 2 cases
             case MPGNotificationAnimationTypeLinear:
             case MPGNotificationAnimationTypeDrop: {
-                
+				
                 [UIView animateWithDuration:kLinearAnimationTime animations:^{
                     self.contentOffset = CGPointMake(0, CGRectGetHeight(self.bounds));
                 } completion:^(BOOL finished){
@@ -732,9 +749,15 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     
     self.animator.delegate = nil;
     self.animator = nil;
-    
-    [self removeFromSuperview];
-    
+	
+	if (notifications.count > 0) {
+		@synchronized(notifications) {
+			[notifications removeObjectAtIndex:0];
+		}
+		MPGNotification *notification = notifications.firstObject;
+		[notification _showNotificationImmediately];
+	}
+	[self removeFromSuperview];
 }
 
 - (BOOL)_notificationOffScreen {

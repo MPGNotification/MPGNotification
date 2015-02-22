@@ -99,6 +99,20 @@
             break;
     }
     
+    //Set the position of notification
+    switch ([_positionType selectedSegmentIndex]) {
+        case 0:
+            [notification setPositionType:MPGNotificationPositionTop];
+            break;
+            
+        case 1:
+            [notification setPositionType:MPGNotificationPositionBottom];
+            break;
+            
+        default:
+            break;
+    }
+    
     [notification show];
     [_showNotificationButton setEnabled:NO];
 }

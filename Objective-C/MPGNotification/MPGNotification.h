@@ -50,6 +50,12 @@ typedef NS_ENUM(NSInteger, MPGNotificationButtonConfigration) {
     MPGNotificationButtonConfigrationCloseButton
 };
 
+// Sets the notification position.
+typedef NS_ENUM(NSInteger, MPGNotificationPosition) {
+    MPGNotificationPositionTop    = 0,
+    MPGNotificationPositionBottom
+};
+
 // Block to handle button presses
 typedef void (^MPGNotificationButtonHandler)(MPGNotification *notification, NSInteger buttonIndex);
 
@@ -95,6 +101,9 @@ typedef void (^MPGNotificationDismissHandler)(MPGNotification *notification);
 
 // Used to specify the type of animation that the notification should use to show and dismiss.
 @property (nonatomic) MPGNotificationAnimationType animationType;
+
+// Used to specify the notification position.
+@property (nonatomic) MPGNotificationPosition positionType;
 
 // Sets the button handler block directly; is also be set indirectly by calling showWithButtonHandler:
 @property (nonatomic, copy) MPGNotificationButtonHandler buttonHandler;

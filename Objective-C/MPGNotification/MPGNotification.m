@@ -96,6 +96,9 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     UIView *topSubview = [[window subviews] lastObject];
     CGRect notificationFrame = CGRectMake(0, 0, CGRectGetWidth(topSubview.bounds), kNotificationHeight);
     
+    // Set default position type.
+    self.positionType = MPGNotificationPositionTop;
+    
     self = [super initWithFrame:notificationFrame];
     if (self) {
         
@@ -525,6 +528,27 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     
     // Called to display the initiliased notification on screen.
     
+    //Modify y origin of notification frame based on its position type.
+    switch (self.positionType) {
+        case MPGNotificationPositionTop: {
+            CGRect frame = self.frame;
+            frame.origin.y = 0;
+            self.frame = frame;
+            break;
+        }
+        case MPGNotificationPositionBottom:{
+            // If the App has a keyWindow, get it, else get the 'top'-most window in the App's hierarchy.
+            UIWindow *window = [self _topAppWindow];
+            
+            // Now get the 'top'-most object in that window and use its MaxY for positioning the notification.
+            UIView *topSubview = [[window subviews] lastObject];
+            CGRect frame = self.frame;
+            frame.origin.y = CGRectGetMaxY(topSubview.bounds) - kNotificationHeight;
+            self.frame = frame;
+            break;
+        }
+    }
+    
     self.notificationRevealed = YES;
     
     if (self.hostViewController) {
@@ -548,11 +572,15 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     switch (self.animationType) {
         case MPGNotificationAnimationTypeLinear: {
             
-            // move notification off-screen
-            self.contentOffset = CGPointMake(0, CGRectGetHeight(self.bounds));
+            // move notification off-screen based on its position type.
+            CGRect frame = self.frame;
+            frame.origin.y = self.frame.origin.y + (kNotificationHeight * (self.positionType == MPGNotificationPositionTop ? -1 : 1));
+            self.frame = frame;
             
             [UIView animateWithDuration:kLinearAnimationTime animations:^{
-                self.contentOffset = CGPointZero;
+                CGRect frame = self.frame;
+                frame.origin.y = self.frame.origin.y - (kNotificationHeight * (self.positionType == MPGNotificationPositionTop ? -1 : 1));
+                self.frame = frame;
             } completion:^(BOOL finished) {
                 [self _startDismissTimerIfSet];
             }];
@@ -562,21 +590,27 @@ static const CGFloat kColorAdjustmentLight = 0.35;
             
         case MPGNotificationAnimationTypeDrop: {
             
-            self.backgroundView.center = CGPointMake(self.center.x,
-                                                     self.center.y - CGRectGetHeight(self.bounds));
+            // move notification off-screen based on its position type.
+            CGRect frame = self.backgroundView.frame;
+            frame.origin.y = frame.origin.y + (kNotificationHeight * (self.positionType == MPGNotificationPositionTop ? -1 : 1));
+            self.backgroundView.frame = frame;
             
             self.animator = [[UIDynamicAnimator alloc] initWithReferenceView:self];
             
+            //Set gravity behavior and its direction based on its position type.
             UIGravityBehavior* gravityBehavior = [[UIGravityBehavior alloc] initWithItems:@[self.backgroundView]];
+            CGVector gravityDirection = {0.0, (self.positionType == MPGNotificationPositionTop ? 1.0 : -1.0)};
+            [gravityBehavior setGravityDirection:gravityDirection];
             [self.animator addBehavior:gravityBehavior];
             
             CGFloat notificationWidth = CGRectGetWidth(self.bounds);
             CGFloat notificationHeight = CGRectGetHeight(self.bounds);
             
+            //Set collision behavior based on its position type.
             UICollisionBehavior* collisionBehavior = [[UICollisionBehavior alloc] initWithItems:@[self.backgroundView]];
             [collisionBehavior addBoundaryWithIdentifier:@"MPGNotificationBoundary"
-                                               fromPoint:CGPointMake(0, notificationHeight)
-                                                 toPoint:CGPointMake(notificationWidth, notificationHeight)];
+                                               fromPoint:CGPointMake(0, (self.positionType == MPGNotificationPositionTop ? notificationHeight : 0))
+                                                 toPoint:CGPointMake(notificationWidth, (self.positionType == MPGNotificationPositionTop ? notificationHeight : 0))];
             
             [self.animator addBehavior:collisionBehavior];
             
@@ -624,7 +658,10 @@ static const CGFloat kColorAdjustmentLight = 0.35;
             case MPGNotificationAnimationTypeDrop: {
                 
                 [UIView animateWithDuration:kLinearAnimationTime animations:^{
-                    self.contentOffset = CGPointMake(0, CGRectGetHeight(self.bounds));
+                    //Dismiss notification based on its position type.
+                    CGRect frame = self.frame;
+                    frame.origin.y = self.frame.origin.y + (kNotificationHeight * (self.positionType == MPGNotificationPositionTop ? -1 : 1));
+                    self.frame = frame;
                 } completion:^(BOOL finished){
                     [self _destroyNotification];
                 }];
@@ -632,9 +669,10 @@ static const CGFloat kColorAdjustmentLight = 0.35;
             }
                 
             case MPGNotificationAnimationTypeSnap: {
+                //Dismiss notification based on its position type.
                 self.animator = [[UIDynamicAnimator alloc] initWithReferenceView:self];
                 [self.animator setDelegate:self];
-                UISnapBehavior *snapBehaviour = [[UISnapBehavior alloc] initWithItem:self.backgroundView snapToPoint:CGPointMake(viewBounds.size.width, -74)];
+                UISnapBehavior *snapBehaviour = [[UISnapBehavior alloc] initWithItem:self.backgroundView snapToPoint:CGPointMake(viewBounds.size.width, (self.positionType == MPGNotificationPositionTop ? -74 : 140))];
                 snapBehaviour.damping = 0.75f;
                 [self.animator addBehavior:snapBehaviour];
                 break;

@@ -21,6 +21,7 @@
 
 @property (weak, nonatomic) IBOutlet UIButton *showNotificationButton;
 @property (weak, nonatomic) IBOutlet UISegmentedControl *animationType;
+@property (weak, nonatomic) IBOutlet UISegmentedControl *positionType;
 @property (weak, nonatomic) IBOutlet UISwitch *iconSwitch;
 @property (weak, nonatomic) IBOutlet UISwitch *subtitleSwitch;
 @property (weak, nonatomic) IBOutlet UILabel *buttonLabel;

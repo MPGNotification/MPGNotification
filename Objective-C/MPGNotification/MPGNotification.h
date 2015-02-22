@@ -81,6 +81,9 @@ typedef void (^MPGNotificationDismissHandler)(MPGNotification *notification);
 // Allows 'swipe to dismiss' action on the Notification. Defaults to YES.
 @property (nonatomic) BOOL swipeToDismissEnabled;
 
+// Allows full-screen messages on iPad. Defaults to NO, similar to iOS Push Notifications.
+@property (nonatomic) BOOL fullWidthMessages;
+
 // To set the title color of the notification. Defaults to [UIColor whiteColor].
 @property (nonatomic, strong) UIColor *titleColor;
 

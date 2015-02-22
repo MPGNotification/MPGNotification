@@ -116,6 +116,9 @@ All properties must be set *BEFORE* `show` or `showWithButtonHandler:` is called
 // Default: YES
 @property (nonatomic) BOOL swipeToDismissEnabled;
 
+// Allows full-screen messages on iPad. Defaults to NO, similar to iOS Push Notifications.
+@property (nonatomic) BOOL fullWidthMessages;
+
 // To set the title color of the notification.
 // Default: [UIColor whiteColor]
 @property (nonatomic, strong) UIColor *titleColor;

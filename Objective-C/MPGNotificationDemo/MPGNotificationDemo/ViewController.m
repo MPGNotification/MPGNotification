@@ -100,7 +100,7 @@
     }
     
     [notification show];
-    [_showNotificationButton setEnabled:NO];
+//    [_showNotificationButton setEnabled:NO];
 }
 
 - (IBAction)updateButtonCount:(id)sender

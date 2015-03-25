@@ -65,8 +65,8 @@
     notification = [MPGNotification notificationWithTitle:@"Joey Dale" subtitle:subtitle backgroundColor:[_colorChooser tintColor] iconImage:icon];
     [notification setButtonConfiguration:buttonArray.count withButtonTitles:buttonArray];
     notification.duration = 2.0;
-    notification.swipeToDismissEnabled = NO;
-    
+    notification.swipeToDismissEnabled = YES;
+	notification.hostViewController = self.navigationController;
     __weak typeof(self) weakSelf = self;
     [notification setDismissHandler:^(MPGNotification *notification) {
         [weakSelf.showNotificationButton setEnabled:YES];

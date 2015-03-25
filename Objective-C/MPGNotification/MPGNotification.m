@@ -61,7 +61,6 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 @property (nonatomic, strong) UILabel *titleLabel;
 
 // optionally built
-@property (nonatomic, strong) UIImageView *iconImageView;
 @property (nonatomic, strong) UILabel *subtitleLabel;
 
 @property (nonatomic, readwrite) UIView *backgroundView;

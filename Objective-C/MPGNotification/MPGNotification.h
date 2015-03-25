@@ -70,6 +70,7 @@ typedef void (^MPGNotificationDismissHandler)(MPGNotification *notification);
 @property (nonatomic, strong) NSString *title; // required
 @property (nonatomic, strong) NSString *subtitle; // optional
 @property (nonatomic, strong) UIImage *iconImage; // optional
+@property (nonatomic, strong) UIImageView *iconImageView;
 @property (nonatomic, strong) UIColor *backgroundColor; // optional
 
 // Optional property specifying the view controller that displays the Notification. Defaults to nil; if nil, the current UIWindow's windowLevel value is used to cache and restore the state of the application.

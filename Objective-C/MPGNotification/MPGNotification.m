@@ -163,7 +163,7 @@ static NSMutableArray *notifications;
 	}
 	
 	CGFloat kHostViewControllerMergin = self.hostViewController != nil ? 20 : 0;
-	static const CGFloat kPaddingX = 5;
+	static const CGFloat kPaddingX = 10;
 	CGFloat notificationWidth = CGRectGetWidth(self.bounds);
 	
 	// ICON IMAGE

@@ -79,12 +79,27 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 // other
 @property (nonatomic, strong) UIDynamicAnimator *animator;
 @property (nonatomic) MPGNotificationButtonConfigration buttonConfiguration;
+@property (nonatomic) int notificationsStack;
 
 @end
 
 ////////////////////////////////////////////////////////////////////////////////
 
 @implementation MPGNotification
+
+//Singleton instance
++ (instancetype)sharedInstance
+{
+    static MPGNotification *sharedInstance = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        sharedInstance = [[MPGNotification alloc] init];
+        sharedInstance.notificationsStack = 0;
+        // Do any other initialisation stuff here
+    });
+    return sharedInstance;
+}
+
 
 // designated initializer
 - (instancetype)init
@@ -526,6 +541,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     // Called to display the initiliased notification on screen.
     
     self.notificationRevealed = YES;
+    [MPGNotification sharedInstance].notificationsStack ++;
     
     if (self.hostViewController) {
         
@@ -732,16 +748,18 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 
 - (void)_destroyNotification {
     
-    if (self.hostViewController == nil) {
-        [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:self.windowLevel];
-    }
-    
     [self _dismissBlockHandler];
     
     self.animator.delegate = nil;
     self.animator = nil;
     
     [self removeFromSuperview];
+    
+    [MPGNotification sharedInstance].notificationsStack --;
+    
+    if (self.hostViewController == nil && [MPGNotification sharedInstance].notificationsStack == 0) {
+        [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:UIWindowLevelStatusBar-1];;
+    }
     
 }
 

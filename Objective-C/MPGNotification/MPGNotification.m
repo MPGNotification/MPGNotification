@@ -75,6 +75,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 // state
 @property (nonatomic) BOOL notificationRevealed;
 @property (nonatomic) BOOL notificationDragged;
+@property (nonatomic) BOOL notificationDestroyed;
 
 // other
 @property (nonatomic, strong) UIDynamicAnimator *animator;
@@ -524,7 +525,8 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 - (void)_showNotification {
     
     // Called to display the initiliased notification on screen.
-    
+   
+    self.notificationDestroyed = NO; 
     self.notificationRevealed = YES;
     
     if (self.hostViewController) {
@@ -732,16 +734,20 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 
 - (void)_destroyNotification {
     
-    if (self.hostViewController == nil) {
-        [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:self.windowLevel];
+    if (!self.notificationDestroyed) {
+        self.notificationDestroyed = YES;
+        
+        if (self.hostViewController == nil) {
+            [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:self.windowLevel];
+        }
+        
+        [self _dismissBlockHandler];
+        
+        self.animator.delegate = nil;
+        self.animator = nil;
+        
+        [self removeFromSuperview];
     }
-    
-    [self _dismissBlockHandler];
-    
-    self.animator.delegate = nil;
-    self.animator = nil;
-    
-    [self removeFromSuperview];
     
 }
 

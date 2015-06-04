@@ -615,7 +615,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 
 - (void)_dismissAnimated:(BOOL)animated {
     
-    //Call this method to dismiss the notification. The notification will dismiss in the same animation as it appeared on screen. If the 'animated' variable is set NO, the notification will disappear without any animation.
+    // Call this method to dismiss the notification. The notification will dismiss in the same animation as it appeared on screen. If the 'animated' variable is set NO, the notification will disappear without any animation.
     CGRect viewBounds = [self.superview bounds];
     if (animated) {
         
@@ -704,7 +704,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     
     if (self.duration > 0) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(self.duration * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            if (self.notificationDragged == NO) {
+            if (self.notificationDragged == NO && self.notificationDestroyed == NO) {
                 [self _dismissAnimated:YES];
             }
         });

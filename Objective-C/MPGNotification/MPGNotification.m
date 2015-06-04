@@ -202,7 +202,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     
     // expected subtitle calculations
     static const CGFloat kSubtitleHeight = 50;
-    CGSize expectedSubtitleSize;
+    CGSize expectedSubtitleSize = CGSizeZero;
     
     // use new sizeWithAttributes: if possible
     SEL selector = NSSelectorFromString(@"sizeWithAttributes:");

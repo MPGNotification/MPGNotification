@@ -196,7 +196,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     static const CGFloat kTitleLabelPaddingX = 8;
     static const CGFloat kTitleLabelHeight = 20;
     
-    CGFloat textPaddingX = (self.iconImage) ? CGRectGetMaxX(self.iconImageView.frame) : contentPaddingX + kPaddingX + 5;
+    CGFloat textPaddingX = (self.iconImage) ? CGRectGetMaxX(self.iconImageView.frame) + kPaddingX : contentPaddingX + kPaddingX + 5;
     CGFloat textTrailingX = (self.firstButton) ? CGRectGetWidth(self.bounds) - CGRectGetMinX(self.firstButton.frame) + 9 : contentPaddingX + 20;
     CGFloat textWidth = notificationWidth - (textPaddingX + textTrailingX);
     
@@ -529,23 +529,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     self.notificationDestroyed = NO; 
     self.notificationRevealed = YES;
     
-    if (self.hostViewController) {
-        
-        [self.hostViewController.view addSubview:self];
-        
-    } else {
-        
-        UIWindow *window = [self _topAppWindow];
-        
-        self.windowLevel = [[[[UIApplication sharedApplication] delegate] window] windowLevel];
-        
-        // Update windowLevel to make sure status bar does not interfere with the notification
-        [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:UIWindowLevelStatusBar+1];
-        
-        // add the notification to the screen
-        [window.subviews.lastObject addSubview:self];
-        
-    }
+    [self _setupNotificationViews];
     
     switch (self.animationType) {
         case MPGNotificationAnimationTypeLinear: {
@@ -772,6 +756,34 @@ static const CGFloat kColorAdjustmentLight = 0.35;
         self.dismissHandler(self);
         self.dismissHandler = nil;
     }
+}
+
+- (void)_setupNotificationViews {
+    
+    if (self.hostViewController) {
+        
+        [self.hostViewController.view addSubview:self];
+        
+    } else {
+        
+        UIWindow *window = [self _topAppWindow];
+        
+        self.windowLevel = [[[[UIApplication sharedApplication] delegate] window] windowLevel];
+        
+        // Update windowLevel to make sure status bar does not interfere with the notification
+        [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:UIWindowLevelStatusBar+1];
+        
+        // add the notification to the screen
+        [window.subviews.lastObject addSubview:self];
+        
+    }
+    
+    UIView *superview = self.superview;
+    CGRect notificationFrame = CGRectMake(0, 0, CGRectGetWidth(superview.bounds), kNotificationHeight);
+    self.contentSize = CGSizeMake(CGRectGetWidth(self.bounds), 2 * CGRectGetHeight(self.bounds));
+    self.backgroundView.frame = self.bounds;
+    
+    
 }
 
 @end

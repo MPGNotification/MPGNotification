@@ -193,7 +193,6 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     // TITLE LABEL
     NSParameterAssert(self.title);
     
-    static const CGFloat kTitleLabelPaddingX = 8;
     static const CGFloat kTitleLabelHeight = 20;
     
     CGFloat textPaddingX = (self.iconImage) ? CGRectGetMaxX(self.iconImageView.frame) + kPaddingX : contentPaddingX + kPaddingX + 5;
@@ -779,7 +778,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     }
     
     UIView *superview = self.superview;
-    CGRect notificationFrame = CGRectMake(0, 0, CGRectGetWidth(superview.bounds), kNotificationHeight);
+    self.frame = CGRectMake(0, 0, CGRectGetWidth(superview.bounds), kNotificationHeight);
     self.contentSize = CGSizeMake(CGRectGetWidth(self.bounds), 2 * CGRectGetHeight(self.bounds));
     self.backgroundView.frame = self.bounds;
     

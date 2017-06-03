@@ -285,6 +285,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
     if ([self _notificationOffScreen] &&
         self.notificationRevealed) {
+        [[[[UIApplication sharedApplication] delegate] window] setWindowLevel:self.windowLevel];
         [self _destroyNotification];
     }
 }

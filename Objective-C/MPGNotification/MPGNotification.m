@@ -36,6 +36,8 @@
 static const CGFloat kMaximumNotificationWidth = 512;
 
 static const CGFloat kNotificationHeight = 64;
+static const CGFloat kStatusBarPadding = 20;
+static const CGFloat kTopPadding = 4;
 static const CGFloat kIconImageSize = 32.0;
 static const NSTimeInterval kLinearAnimationTime = 0.25;
 
@@ -95,9 +97,11 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 
     // Now get the 'top'-most object in that window and use its width for the Notification
     UIView *topSubview = [[window subviews] lastObject];
-    CGRect notificationFrame = CGRectMake(0, 0, CGRectGetWidth(topSubview.bounds), kNotificationHeight);
     
+    CGRect notificationFrame = CGRectMake(0, 0, CGRectGetWidth(topSubview.bounds), kNotificationHeight);
+
     self = [super initWithFrame:notificationFrame];
+
     if (self) {
         
         self.scrollEnabled = NO; // default swipe/scrolling to off (in case swipeToDismiss is not enabled by default)
@@ -109,10 +113,15 @@ static const CGFloat kColorAdjustmentLight = 0.35;
         
         self.delegate = self;
         
+        if (@available(iOS 11.0, *)) {
+            self.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
+        }
+        
         [super setBackgroundColor:[UIColor clearColor]]; // set background color of scrollView to clear
         
         // make background button (always needed, even if no target)
         self.backgroundView = [[UIView alloc] initWithFrame:self.bounds];
+        self.backgroundView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         [self addSubview:self.backgroundView];
         
         self.backgroundView.frame = self.bounds;
@@ -158,11 +167,16 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     CGFloat maxWidth = 0.5 * (notificationWidth - kMaximumNotificationWidth);
     CGFloat contentPaddingX = (self.fullWidthMessages) ? 0 : MAX(0,maxWidth);
     
+    CGFloat topSafeAreaInset = kTopPadding;
+    if (@available(iOS 11.0, *)) {
+        topSafeAreaInset += MAX(self.safeAreaInsets.top - kStatusBarPadding, 0.0);
+    }
+    
     // ICON IMAGE
     static const CGFloat kIconPaddingY = 15;
     
     self.iconImageView.frame = CGRectMake(contentPaddingX + kPaddingX,
-                                          kIconPaddingY,
+                                          kIconPaddingY + topSafeAreaInset,
                                           kIconImageSize,
                                           kIconImageSize);
     
@@ -181,13 +195,13 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     CGFloat buttonOriginX = notificationWidth - kButtonOriginXOffset - contentPaddingX;
     CGFloat closeButtonOriginX = notificationWidth - kCloseButtonOriginXOffset - contentPaddingX;
     
-    CGFloat firstButtonOriginY = (self.secondButton) ? 6 : 17;
+    CGFloat firstButtonOriginY = ((self.secondButton) ? 6 : 17) + topSafeAreaInset;
     CGFloat buttonHeight = (self.firstButton && self.secondButton) ? 25 : 30;
     CGFloat secondButtonOriginY = firstButtonOriginY + buttonHeight + kButtonPadding;
     
     self.firstButton.frame = CGRectMake(buttonOriginX, firstButtonOriginY, kButtonWidthDefault, buttonHeight);
     self.secondButton.frame = CGRectMake(buttonOriginX, secondButtonOriginY, kButtonWidthDefault, buttonHeight);
-    self.closeButton.frame = CGRectMake(closeButtonOriginX, kCloseButtonOriginY, kCloseButtonWidth, kCloseButtonHeight);
+    self.closeButton.frame = CGRectMake(closeButtonOriginX, kCloseButtonOriginY + topSafeAreaInset, kCloseButtonWidth, kCloseButtonHeight);
     
     
     // TITLE LABEL
@@ -226,7 +240,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     CGFloat titleLabelPaddingY = (subtitleEmpty) ? 18 : (subtitleOneLiner) ? 13 : 3;
     
     self.titleLabel.frame = CGRectMake(textPaddingX,
-                                       titleLabelPaddingY,
+                                       titleLabelPaddingY + topSafeAreaInset,
                                        textWidth,
                                        kTitleLabelHeight);
     
@@ -259,8 +273,6 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     self.swipeHintView.backgroundColor = [self _darkerColorForColor:self.backgroundColor];
     self.titleLabel.textColor = self.titleColor;
     self.subtitleLabel.textColor = self.subtitleColor;
-    
-    
 }
 
 #pragma mark - UIScrollView Delegate
@@ -778,11 +790,14 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     }
     
     UIView *superview = self.superview;
-    self.frame = CGRectMake(0, 0, CGRectGetWidth(superview.bounds), kNotificationHeight);
+    CGRect frame = CGRectMake(0, 0, CGRectGetWidth(superview.bounds), kNotificationHeight + kTopPadding);
+    if (@available(iOS 11.0, *)) {
+        frame.size.height += MAX(superview.safeAreaInsets.top - kStatusBarPadding, 0.0);
+    }
+    
+    self.frame = frame;
     self.contentSize = CGSizeMake(CGRectGetWidth(self.bounds), 2 * CGRectGetHeight(self.bounds));
     self.backgroundView.frame = self.bounds;
-    
-    
 }
 
 @end

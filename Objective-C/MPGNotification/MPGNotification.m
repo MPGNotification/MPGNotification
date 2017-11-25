@@ -134,6 +134,9 @@ static const CGFloat kColorAdjustmentLight = 0.35;
         self.backgroundTapsEnabled = YES;
         self.swipeToDismissEnabled = YES;
         
+        // auto resizing for interface orientation change
+        self.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+        self.backgroundView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
     }
     return self;
 }

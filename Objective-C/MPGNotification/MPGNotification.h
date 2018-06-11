@@ -58,13 +58,14 @@ typedef void (^MPGNotificationDismissHandler)(MPGNotification *notification);
 
 ////////////////////////////////////////////////////////////////////////////////
 
-@interface MPGNotification : UIScrollView <UIScrollViewDelegate, UIDynamicAnimatorDelegate>
+@interface MPGNotification : UIScrollView <UIScrollViewDelegate, UIDynamicAnimatorDelegate, UIGestureRecognizerDelegate>
 
 // Public accessors to private properties
 @property (nonatomic, readonly) UIView *backgroundView; // to read tag value
 @property (nonatomic, readonly) UIButton *firstButton; // to read tag value
 @property (nonatomic, readonly) UIButton *secondButton;  // to read tag value
 @property (nonatomic, readonly) UIButton *closeButton;  // to read tag value
+
 
 // Properties used for basic styling
 @property (nonatomic, strong) NSString *title; // required
@@ -102,9 +103,24 @@ typedef void (^MPGNotificationDismissHandler)(MPGNotification *notification);
 // Sets the dismiss hanlder block directly;
 @property (nonatomic, copy) MPGNotificationDismissHandler dismissHandler;
 
+// Sets the Maximum Notification Width;
+@property (nonatomic) CGFloat kMaximumNotificationWidth;
+
+// Sets the Maximum Notification height;
+@property (nonatomic) CGFloat kNotificationHeight;
+
+// Sets Notification's Subtile Height;
+@property (nonatomic) CGFloat kSubtitleHeight;
+
+// Sets Notification's Title Height;
+@property (nonatomic) CGFloat kTitleLabelHeight;
+
+@property (nonatomic, readwrite) UILabel *seprator;
 // Convenience initializer class methods (for manual setup, use init)
++ (MPGNotification *)notificationWithTitle:(NSString *)title Attributedsubtitle:(NSAttributedString *)subtitle backgroundColor:(UIColor *)color iconImage:(UIImage *)image;
 + (MPGNotification *)notificationWithTitle:(NSString *)title subtitle:(NSString *)subtitle backgroundColor:(UIColor *)color iconImage:(UIImage *)image;
 + (MPGNotification *)notificationWithHostViewController:(UIViewController *)hostViewController title:(NSString *)title subtitle:(NSString *)subtitle backgroundColor:(UIColor *)color iconImage:(UIImage *)image;
+
 
 // Sets the configuration and titles for the Notification's visible buttons. The number of buttonTitles supplied must match the configuration.
 - (void)setButtonConfiguration:(MPGNotificationButtonConfigration)configuration withButtonTitles:(NSArray *)buttonTitles;
@@ -115,5 +131,7 @@ typedef void (^MPGNotificationDismissHandler)(MPGNotification *notification);
 
 // Dismiss the notification. Occurs automatically if any enabled button is pressed.
 - (void)dismissWithAnimation:(BOOL)animated;
+
+- (CGFloat)heightForText:(NSString *)bodyText textWidth:(CGFloat) width fontSize:(CGFloat) fontSize;
 
 @end

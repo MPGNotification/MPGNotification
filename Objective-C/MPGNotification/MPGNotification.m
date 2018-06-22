@@ -260,6 +260,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
                                               self.kSubtitleHeight);
     
     [self.subtitleLabel setNumberOfLines:3];
+    [self.titleLabel setNumberOfLines: 0];
     
     if (_kNotificationHeight == 0) {
         [self _setupNotificationViews];

@@ -30,22 +30,16 @@
 //  https://github.com/MPGNotification/MPGNotification
 
 #import "MPGNotification.h"
-
 ////////////////////////////////////////////////////////////////////////////////
 
-static const CGFloat kMaximumNotificationWidth = 512;
-
-static const CGFloat kNotificationHeight = 64;
-static const CGFloat kStatusBarPadding = 20;
-static const CGFloat kTopPadding = 4;
 static const CGFloat kIconImageSize = 32.0;
 static const NSTimeInterval kLinearAnimationTime = 0.25;
 
 NSString * const kTitleFontName = @"HelveticaNeue-Bold";
-static const CGFloat kTitleFontSize = 17.0;
+static const CGFloat kTitleFontSize = 15.0;
 
 NSString * const kSubtitleFontName = @"HelveticaNeue";
-static const CGFloat kSubtitleFontSize = 14.0;
+static const CGFloat kSubtitleFontSize = 12.0;
 
 static const CGFloat kButtonFontSize = 13.0;
 static const CGFloat kButtonCornerRadius = 3.0;
@@ -71,6 +65,8 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 @property (nonatomic, readwrite) UIButton *firstButton;
 @property (nonatomic, readwrite) UIButton *secondButton;
 @property (nonatomic, readwrite) UIButton *closeButton;
+@property (nonatomic, readwrite) UILabel *line;
+@property (nonatomic, readwrite) UILabel *line2;
 
 @property (nonatomic, strong) UIView *swipeHintView;
 
@@ -97,11 +93,10 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 
     // Now get the 'top'-most object in that window and use its width for the Notification
     UIView *topSubview = [[window subviews] lastObject];
+    self.kNotificationHeight = self.kSubtitleHeight + self.kTitleLabelHeight;
+    CGRect notificationFrame = CGRectMake(0, 0, CGRectGetWidth(topSubview.bounds), self.kNotificationHeight);
     
-    CGRect notificationFrame = CGRectMake(0, 0, CGRectGetWidth(topSubview.bounds), kNotificationHeight);
-
     self = [super initWithFrame:notificationFrame];
-
     if (self) {
         
         self.scrollEnabled = NO; // default swipe/scrolling to off (in case swipeToDismiss is not enabled by default)
@@ -113,15 +108,10 @@ static const CGFloat kColorAdjustmentLight = 0.35;
         
         self.delegate = self;
         
-        if (@available(iOS 11.0, *)) {
-            self.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
-        }
-        
         [super setBackgroundColor:[UIColor clearColor]]; // set background color of scrollView to clear
         
         // make background button (always needed, even if no target)
         self.backgroundView = [[UIView alloc] initWithFrame:self.bounds];
-        self.backgroundView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         [self addSubview:self.backgroundView];
         
         self.backgroundView.frame = self.bounds;
@@ -133,9 +123,37 @@ static const CGFloat kColorAdjustmentLight = 0.35;
         
         self.backgroundTapsEnabled = YES;
         self.swipeToDismissEnabled = YES;
+        self.line2 = [[UILabel alloc]init];
+        self.line2.text = @"";
+        self.line2.backgroundColor =  [UIColor colorWithRed:163.0/255.0 green:180.0/255.0 blue:194.0/255.0 alpha:1];
+        self.line2.frame = CGRectMake(0, 0, self.frame.size.width, 2);
+        [self addSubview:self.line2];
         
+        self.line = [[UILabel alloc]init];
+        self.line.text = @"";
+        self.line.backgroundColor =  [UIColor colorWithRed:163.0/255.0 green:180.0/255.0 blue:194.0/255.0 alpha:1];
+        self.line.frame = CGRectMake(0, self.frame.size.height - 1, self.frame.size.width, 1);
+        [self addSubview:self.line];
+        
+        self.seprator = [[UILabel alloc]init];
+        self.seprator.text = @"";
+        self.seprator.backgroundColor =  [UIColor colorWithRed:59.0/255.0 green:198.0/255.0 blue:244.0/255.0 alpha:1];
+        self.seprator.frame = CGRectMake(self.frame.size.width / 2 - 10, self.frame.size.height - 7, 20, 4);
+        [self.seprator.layer setCornerRadius:2];
+        self.seprator.layer.masksToBounds = true;
+     //   [self addSubview:self.seprator];
     }
     return self;
+}
+
+- (CGFloat)heightForText:(NSString *)bodyText textWidth:(CGFloat) width fontSize:(CGFloat) fontSize
+{
+    UIFont *cellFont = [UIFont systemFontOfSize:fontSize];
+    CGSize constraintSize = CGSizeMake(width, MAXFLOAT);
+    CGSize labelSize = [bodyText sizeWithFont:cellFont constrainedToSize:constraintSize lineBreakMode:UILineBreakModeWordWrap];
+    CGFloat height = labelSize.height+20;
+    NSLog(@"height=%f", height);
+    return height;
 }
 
 - (instancetype)initWithFrame:(CGRect)frame
@@ -164,22 +182,16 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     static const CGFloat kPaddingX = 5;
     CGFloat notificationWidth = CGRectGetWidth(self.bounds);
     
-    CGFloat maxWidth = 0.5 * (notificationWidth - kMaximumNotificationWidth);
+    CGFloat maxWidth = 0.5 * (notificationWidth - self.kMaximumNotificationWidth);
     CGFloat contentPaddingX = (self.fullWidthMessages) ? 0 : MAX(0,maxWidth);
-    
-    CGFloat topSafeAreaInset = kTopPadding;
-    if (@available(iOS 11.0, *)) {
-        topSafeAreaInset += MAX(self.safeAreaInsets.top - kStatusBarPadding, 0.0);
-    }
     
     // ICON IMAGE
     static const CGFloat kIconPaddingY = 15;
     
     self.iconImageView.frame = CGRectMake(contentPaddingX + kPaddingX,
-                                          kIconPaddingY + topSafeAreaInset,
+                                          kIconPaddingY,
                                           kIconImageSize,
                                           kIconImageSize);
-    
     
     // BUTTONS
     static const CGFloat kButtonOriginXOffset = 75;
@@ -195,26 +207,25 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     CGFloat buttonOriginX = notificationWidth - kButtonOriginXOffset - contentPaddingX;
     CGFloat closeButtonOriginX = notificationWidth - kCloseButtonOriginXOffset - contentPaddingX;
     
-    CGFloat firstButtonOriginY = ((self.secondButton) ? 6 : 17) + topSafeAreaInset;
+    CGFloat firstButtonOriginY = (self.secondButton) ? 6 : 17;
     CGFloat buttonHeight = (self.firstButton && self.secondButton) ? 25 : 30;
     CGFloat secondButtonOriginY = firstButtonOriginY + buttonHeight + kButtonPadding;
     
     self.firstButton.frame = CGRectMake(buttonOriginX, firstButtonOriginY, kButtonWidthDefault, buttonHeight);
     self.secondButton.frame = CGRectMake(buttonOriginX, secondButtonOriginY, kButtonWidthDefault, buttonHeight);
-    self.closeButton.frame = CGRectMake(closeButtonOriginX, kCloseButtonOriginY + topSafeAreaInset, kCloseButtonWidth, kCloseButtonHeight);
-    
-    
+    self.closeButton.frame = CGRectMake(closeButtonOriginX, kCloseButtonOriginY, kCloseButtonWidth, kCloseButtonHeight);
+
     // TITLE LABEL
     NSParameterAssert(self.title);
-    
-    static const CGFloat kTitleLabelHeight = 20;
-    
+
     CGFloat textPaddingX = (self.iconImage) ? CGRectGetMaxX(self.iconImageView.frame) + kPaddingX : contentPaddingX + kPaddingX + 5;
     CGFloat textTrailingX = (self.firstButton) ? CGRectGetWidth(self.bounds) - CGRectGetMinX(self.firstButton.frame) + 9 : contentPaddingX + 20;
     CGFloat textWidth = notificationWidth - (textPaddingX + textTrailingX);
-    
+    if ([_title length] != 0) {
+        self.kTitleLabelHeight = [self heightForText:self.title textWidth:textWidth fontSize:kTitleFontSize];
+    }
+    self.kSubtitleHeight = [self heightForText:self.subtitle textWidth:textWidth fontSize:kSubtitleFontSize];
     // expected subtitle calculations
-    static const CGFloat kSubtitleHeight = 50;
     CGSize expectedSubtitleSize = CGSizeZero;
     
     // use new sizeWithAttributes: if possible
@@ -222,7 +233,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     if ([self.subtitle respondsToSelector:selector]) {
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 70000
         NSDictionary *attributes = @{NSFontAttributeName:self.subtitleLabel.font};
-        CGRect rect = [self.subtitle boundingRectWithSize:CGSizeMake(textWidth, kSubtitleHeight) options:NSStringDrawingUsesLineFragmentOrigin attributes:attributes context:nil];
+        CGRect rect = [self.subtitle boundingRectWithSize:CGSizeMake(textWidth, self.kSubtitleHeight) options:NSStringDrawingUsesLineFragmentOrigin attributes:attributes context:nil];
         expectedSubtitleSize = rect.size;
 #endif
     }
@@ -235,32 +246,31 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     }
     
     BOOL subtitleEmpty = (self.subtitle == nil || self.subtitle.length == 0);
+    BOOL titleEmpty = (self.title == nil || self.title.length == 0);
     BOOL subtitleOneLiner = (expectedSubtitleSize.height < 25 && subtitleEmpty == NO);
     
-    CGFloat titleLabelPaddingY = (subtitleEmpty) ? 18 : (subtitleOneLiner) ? 13 : 3;
-    
-    self.titleLabel.frame = CGRectMake(textPaddingX,
-                                       titleLabelPaddingY + topSafeAreaInset,
-                                       textWidth,
-                                       kTitleLabelHeight);
-    
+    CGFloat titleLabelPaddingY = (subtitleEmpty) ? 18 : (subtitleOneLiner) ? 2 : 10;
+    self.titleLabel.frame = CGRectMake(textPaddingX,titleLabelPaddingY,textWidth,self.kTitleLabelHeight);
     
     // SUBTITLE LABEL
-    CGFloat subtitlePaddingY = 1;
-    
+    CGFloat subtitlePaddingY = 8;
     self.subtitleLabel.frame = CGRectMake(CGRectGetMinX(self.titleLabel.frame),
-                                          CGRectGetMaxY(self.titleLabel.frame) + subtitlePaddingY,
-                                          textWidth,
-                                          kSubtitleHeight);
-    [self.subtitleLabel sizeToFit];
+                                              titleEmpty ? 5 : (CGRectGetMaxY(self.titleLabel.frame) - subtitlePaddingY),
+                                              textWidth,
+                                              self.kSubtitleHeight);
     
+    [self.subtitleLabel setNumberOfLines:3];
+    [self.titleLabel setNumberOfLines: 0];
     
+    if (_kNotificationHeight == 0) {
+        [self _setupNotificationViews];
+    }
     // SWIPE HINT VIEW, ONLY SHOW IF ENABLED
     if(self.swipeToDismissEnabled){
         static const CGFloat kSwipeHintWidth = 37;
         static const CGFloat kSwipeHintHeight = 5;
         static const CGFloat kSwipeHintTrailingY = 5;
-        
+
         self.swipeHintView.frame = CGRectMake(0.5 * (CGRectGetWidth(self.backgroundView.bounds) - kSwipeHintWidth),
                                               CGRectGetHeight(self.backgroundView.bounds) - kSwipeHintTrailingY - kSwipeHintHeight,
                                               kSwipeHintWidth,
@@ -268,9 +278,9 @@ static const CGFloat kColorAdjustmentLight = 0.35;
         
         self.swipeHintView.layer.cornerRadius = CGRectGetHeight(self.swipeHintView.bounds) * 0.5;
     }
-    
+
     // COLORS!!
-    self.swipeHintView.backgroundColor = [self _darkerColorForColor:self.backgroundColor];
+    self.swipeHintView.backgroundColor = [UIColor colorWithRed:59.0/255.0 green:198.0/255.0 blue:244.0/255.0 alpha:1];
     self.titleLabel.textColor = self.titleColor;
     self.subtitleLabel.textColor = self.subtitleColor;
 }
@@ -282,7 +292,6 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     if (self.notificationDragged == NO) {
         self.notificationDragged = YES;
     }
-    
 }
 
 - (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
@@ -319,6 +328,18 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     
 }
 
++ (MPGNotification *)notificationWithTitle:(NSString *)title Attributedsubtitle:(NSAttributedString *)subtitle backgroundColor:(UIColor *)color iconImage:(UIImage *)image
+{
+    MPGNotification *newNotification = [MPGNotification new];
+    newNotification.title = title;
+    [newNotification setAttributedSubtitle:subtitle];
+    //newNotification.subtitle = subtitle;
+    newNotification.backgroundColor = color;
+    newNotification.iconImage = image;
+    
+    return newNotification;
+}
+
 + (MPGNotification *)notificationWithTitle:(NSString *)title subtitle:(NSString *)subtitle backgroundColor:(UIColor *)color iconImage:(UIImage *)image {
     
     MPGNotification *newNotification = [MPGNotification new];
@@ -327,7 +348,6 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     newNotification.subtitle = subtitle;
     newNotification.backgroundColor = color;
     newNotification.iconImage = image;
-    
     return newNotification;
     
 }
@@ -352,17 +372,29 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     if (!self.titleLabel) {
         self.titleLabel = [[UILabel alloc] initWithFrame:CGRectZero];
         [self.backgroundView addSubview:self.titleLabel];
-        
         self.titleLabel.backgroundColor = [UIColor clearColor];
-        
         self.titleLabel.font = [UIFont fontWithName:kTitleFontName size:kTitleFontSize];
     }
-    
+
     self.titleLabel.text = title;
     [self setNeedsLayout];
 }
 
 - (void)setSubtitle:(NSString *)subtitle {
+    
+    _subtitle = subtitle;
+    
+    if (!self.subtitleLabel) {
+        self.subtitleLabel = [[UILabel alloc] initWithFrame:CGRectMake(1, 1, 1, 1)];
+        [self.backgroundView addSubview:self.subtitleLabel];
+        self.subtitleLabel.backgroundColor = [UIColor clearColor];
+        self.subtitleLabel.font = [UIFont fontWithName:kSubtitleFontName size:kSubtitleFontSize];
+    }
+
+    self.subtitleLabel.text = subtitle;
+    [self setNeedsLayout];
+}
+- (void)setAttributedSubtitle:(NSAttributedString *)subtitle {
     
     _subtitle = subtitle;
     
@@ -376,7 +408,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
         self.subtitleLabel.numberOfLines = 2;
     }
     
-    self.subtitleLabel.text = subtitle;
+    self.subtitleLabel.attributedText = subtitle;
     [self setNeedsLayout];
 }
 
@@ -408,9 +440,22 @@ static const CGFloat kColorAdjustmentLight = 0.35;
         UITapGestureRecognizer *tapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(_backgroundTapped:)];
         [self.backgroundView addGestureRecognizer:tapRecognizer];
     }
+    else{
+//        UISwipeGestureRecognizer *swipeRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(_swipeUp:)];
+//        swipeRecognizer.direction = UISwipeGestureRecognizerDirectionUp | UISwipeGestureRecognizerDirectionDown;
+//        self.seprator.userInteractionEnabled = true;
+//        self.backgroundView.userInteractionEnabled = true;
+//        swipeRecognizer.delegate = self;
+//        
+//        [self.backgroundView addGestureRecognizer:swipeRecognizer];
+//        [self.seprator addGestureRecognizer:swipeRecognizer];
+    }
     
 }
-
+//-(BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer
+//{
+//    return YES;
+//}
 - (void)setSwipeToDismissEnabled:(BOOL)swipeToDismissEnabled {
     
     _swipeToDismissEnabled = swipeToDismissEnabled;
@@ -421,6 +466,7 @@ static const CGFloat kColorAdjustmentLight = 0.35;
         
         if (!self.swipeHintView) {
             self.swipeHintView = [[UIView alloc] initWithFrame:CGRectZero];
+            
             [self.backgroundView addSubview:self.swipeHintView];
         }
         
@@ -652,7 +698,13 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     [self _responderTapped:button];
     
 }
-
+-(void)_swipeUp:(UISwipeGestureRecognizer *)swipeRecognizer {
+    
+    if (swipeRecognizer.direction == UISwipeGestureRecognizerDirectionUp)
+    {
+        [self _dismissAnimated:YES];
+    }
+}
 - (void)_backgroundTapped:(UITapGestureRecognizer *)tapRecognizer {
     
     [self _responderTapped:self.backgroundView];
@@ -759,7 +811,6 @@ static const CGFloat kColorAdjustmentLight = 0.35;
     if (self.buttonHandler) {
         self.buttonHandler(self, responder.tag);
     }
-    
 }
 
 - (void)_dismissBlockHandler {
@@ -770,13 +821,9 @@ static const CGFloat kColorAdjustmentLight = 0.35;
 }
 
 - (void)_setupNotificationViews {
-    
     if (self.hostViewController) {
-        
         [self.hostViewController.view addSubview:self];
-        
     } else {
-        
         UIWindow *window = [self _topAppWindow];
         
         self.windowLevel = [[[[UIApplication sharedApplication] delegate] window] windowLevel];
@@ -786,16 +833,10 @@ static const CGFloat kColorAdjustmentLight = 0.35;
         
         // add the notification to the screen
         [window.subviews.lastObject addSubview:self];
-        
     }
-    
     UIView *superview = self.superview;
-    CGRect frame = CGRectMake(0, 0, CGRectGetWidth(superview.bounds), kNotificationHeight + kTopPadding);
-    if (@available(iOS 11.0, *)) {
-        frame.size.height += MAX(superview.safeAreaInsets.top - kStatusBarPadding, 0.0);
-    }
-    
-    self.frame = frame;
+    self.kNotificationHeight = self.kSubtitleHeight + self.kTitleLabelHeight;
+    self.frame = CGRectMake(0, 0, CGRectGetWidth(superview.bounds), self.kNotificationHeight+10);
     self.contentSize = CGSizeMake(CGRectGetWidth(self.bounds), 2 * CGRectGetHeight(self.bounds));
     self.backgroundView.frame = self.bounds;
 }
